@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 all: ${TLPI_LIB}
 
-OBJECTS = $(patsubst %.c, %.o, $(widcard *.c))
+OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
 
 ${TLPI_LIB}: ${OBJECTS}
 	${RM} ${TLPI_LIB}
