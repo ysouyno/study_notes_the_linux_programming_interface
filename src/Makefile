@@ -1,4 +1,5 @@
-DIRS = lib
+DIRS = lib \
+	fileio
 
 BUILD_DIRS = ${DIRS}
 
