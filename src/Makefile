@@ -1,5 +1,6 @@
 DIRS = lib \
-	fileio
+	fileio \
+	test
 
 BUILD_DIRS = ${DIRS}
 
