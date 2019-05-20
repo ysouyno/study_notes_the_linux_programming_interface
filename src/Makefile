@@ -1,6 +1,7 @@
 DIRS = lib \
 	fileio \
-	test
+	test \
+	getopt
 
 BUILD_DIRS = ${DIRS}
 
