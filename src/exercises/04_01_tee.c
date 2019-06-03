@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdbool.h>
+#include <fcntl.h>
 #include "tlpi_hdr.h"
 
 #define printable(ch) (isprint((unsigned char)ch) ? ch : '#')
@@ -20,14 +21,19 @@ static void usageError(char *prog_name, char *msg, int opt)
 int main(int argc, char *argv[])
 {
   int opt;
-  char *pfile;
   char buf[BUF_SIZE];
   ssize_t num_read;
   bool append;
+  int open_flags;
+  mode_t file_perms;
+  int nfiles;
+  int *files_fd;
 
   opt = 0;
-  pfile = NULL;
   append = false;
+  open_flags = O_CREAT | O_WRONLY;
+  nfiles = 0;
+  files_fd = NULL;
 
   while ((opt = getopt(argc, argv, ":a")) != -1) {
     printf("opt = %3d (%c); optind = %d", opt, printable(opt), optind);
@@ -46,15 +52,40 @@ int main(int argc, char *argv[])
     }
   }
 
+  if (append) {
+    open_flags |= O_APPEND;
+  }
+  else {
+    open_flags |= O_TRUNC;
+  }
+
+  file_perms =
+    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH; // rw-rw-rw-
+
   printf("argc - optind = %d\n", argc - optind);
 
-  /*
+  nfiles = argc - optind;
+  files_fd = malloc((nfiles + 1) * sizeof(int));
+  files_fd[0] = STDOUT_FILENO;
+
+  for (int i = 1; i <= nfiles; ++i) {
+    files_fd[i] = open(argv[optind + i - 1], open_flags, file_perms);
+    printf("filename: %s, fd: %d\n", argv[optind + i - 1], files_fd[i]);
+  }
+
   while ((num_read = read(STDIN_FILENO, buf, BUF_SIZE)) > 0) {
-    if (write(STDOUT_FILENO, buf, num_read) != num_read) {
-      errExit("write");
+    for (int i = 0; i <= nfiles; ++i) {
+      if (write(files_fd[i], buf, num_read) != num_read) {
+        errExit("write");
+      }
     }
   }
-  */
 
-  return 0;
+  for (int i = 1; i <= nfiles; ++i) {
+    if (close(files_fd[i]) == -1) {
+      errExit("close");
+    }
+  }
+
+  return EXIT_SUCCESS;
 }
