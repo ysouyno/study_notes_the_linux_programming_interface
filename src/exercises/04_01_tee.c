@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
   while ((num_read = read(STDIN_FILENO, buf, BUF_SIZE)) > 0) {
     for (int i = 0; i <= nfiles; ++i) {
       if (write(files_fd[i], buf, num_read) != num_read) {
+        free(files_fd);
         errExit("write");
       }
     }
@@ -83,9 +84,11 @@ int main(int argc, char *argv[])
 
   for (int i = 1; i <= nfiles; ++i) {
     if (close(files_fd[i]) == -1) {
+      free(files_fd);
       errExit("close");
     }
   }
 
+  free(files_fd);
   return EXIT_SUCCESS;
 }
