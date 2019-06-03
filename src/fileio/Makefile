@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = copy seek_io
+GEN_EXE = copy seek_io bad_exclusive_open
 
 LINUX_EXE = large_file
 
