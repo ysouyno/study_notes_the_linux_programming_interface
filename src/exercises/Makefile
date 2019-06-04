@@ -2,9 +2,7 @@ include ../Makefile.inc
 
 GEN_EXE = 04_01_tee
 
-LINUX_EXE =
-
-EXE = ${GEN_EXE} ${LINUX_EXE}
+EXE = ${GEN_EXE}
 
 all: ${EXE}
 

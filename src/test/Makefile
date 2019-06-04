@@ -1,10 +1,8 @@
 include ../Makefile.inc
 
-GEN_EXE = fileio_test_00
+GEN_EXE = fileio_test_00 fileio_test_01
 
-LINUX_EXE = large_file
-
-EXE = ${GEN_EXE} ${LINUX_EXE}
+EXE = ${GEN_EXE}
 
 all: ${EXE}
 
