@@ -3,7 +3,8 @@ DIRS = lib \
 	test \
 	getopt \
 	exercises \
-	proc
+	proc \
+	memalloc
 
 BUILD_DIRS = ${DIRS}
 
