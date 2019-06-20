@@ -2,7 +2,8 @@ DIRS = lib \
 	fileio \
 	test \
 	getopt \
-	exercises
+	exercises \
+	proc
 
 BUILD_DIRS = ${DIRS}
 
