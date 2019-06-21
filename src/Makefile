@@ -4,7 +4,8 @@ DIRS = lib \
 	getopt \
 	exercises \
 	proc \
-	memalloc
+	memalloc \
+	users_groups
 
 BUILD_DIRS = ${DIRS}
 
