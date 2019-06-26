@@ -5,7 +5,8 @@ DIRS = lib \
 	exercises \
 	proc \
 	memalloc \
-	users_groups
+	users_groups \
+	proccred
 
 BUILD_DIRS = ${DIRS}
 
