@@ -28,6 +28,8 @@
 - [<2019-06-22 周六>](#2019-06-22-周六)
     - [《The Linux Programming Interface》读书笔记（七）](#the-linux-programming-interface读书笔记七)
         - [Set-User-ID and Set-Group-ID Programs](#set-user-id-and-set-group-id-programs)
+- [<2019-06-27 周四>](#2019-06-27-周四)
+    - [《The Linux Programming Interface》读书笔记（八）](#the-linux-programming-interface读书笔记八)
 
 <!-- markdown-toc end -->
 
@@ -734,3 +736,11 @@ Successfully authenticated: UID=1000
 ```
 
 注意到此时`check_password`的权限从`-rwxr-xr-x`变成了`-rwsr-xr-x`，同时必须注意这里首先使用`chown`将`check_password`的所有者变成`root`，因为当`Set-User-ID`程序`check_password`执行时程序就具有文件所有者的权限，即`root`权限。
+
+# <2019-06-27 周四>
+
+## 《The Linux Programming Interface》读书笔记（八）
+
+决定暂时还是将这本书终止，不再看了，目前看到第234页。不想继续看的原因是书中所讲的内容不能吸引我，看得好累好困，今天一天一直都在被这本书催眠。
+
+目前看到的第10章，讲的是时间，15章居然讲文件属性，我的天，我还看到书上教你如何使用`mount`命令。
