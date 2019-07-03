@@ -7,7 +7,8 @@ DIRS = lib \
 	memalloc \
 	users_groups \
 	proccred \
-	time
+	time \
+	signals
 
 BUILD_DIRS = ${DIRS}
 
