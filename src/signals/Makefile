@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = ouch intquit t_kill
+GEN_EXE = ouch intquit t_kill sig_sender sig_receiver
 
 LINUX_EXE =
 

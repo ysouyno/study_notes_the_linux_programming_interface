@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = fileio_test_00 fileio_test_01
+GEN_EXE = fileio_test_00 fileio_test_01 signals_test_00
 
 EXE = ${GEN_EXE}
 
