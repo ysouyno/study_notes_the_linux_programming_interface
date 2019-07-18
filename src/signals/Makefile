@@ -1,6 +1,7 @@
 include ../Makefile.inc
 
-GEN_EXE = ouch intquit t_kill sig_sender sig_receiver
+GEN_EXE = ouch intquit t_kill sig_sender sig_receiver nonreentrant \
+	sigmask_longjmp sigmask_siglongjmp
 
 LINUX_EXE =
 
@@ -26,6 +27,15 @@ ouch: ouch.c
 
 intquit: intquit.c
 	${CC} -D_BSD_SOURCE -o $@ intquit.c ${CFLAGS} ${LDLIBS}
+
+sig_receiver: sig_receiver.c
+	${CC} -D_BSD_SOURCE -o $@ sig_receiver.c ${CFLAGS} ${LDLIBS}
+
+nonreentrant: nonreentrant.o
+	${CC} -o $@ nonreentrant.o ${CFLAGS} ${LDLIBS} ${LINUX_LIBCRYPT}
+
+sigmask_siglongjmp.o: sigmask_longjmp.c
+	${CC} -o $@ -DUSE_SIGSETJMP -c sigmask_longjmp.c ${CFLAGS}
 
 clean:
 	${RM} ${EXE} *.o
