@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 GEN_EXE = ouch intquit t_kill sig_sender sig_receiver nonreentrant \
 	sigmask_longjmp sigmask_siglongjmp t_sigaltstack t_sigqueue \
-	catch_rtsigs t_sigsuspend
+	catch_rtsigs t_sigsuspend t_sigwaitinfo signalfd_sigval
 
 LINUX_EXE =
 
