@@ -8,7 +8,8 @@ DIRS = lib \
 	users_groups \
 	proccred \
 	time \
-	signals
+	signals \
+	procexec
 
 BUILD_DIRS = ${DIRS}
 
