@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01
+GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01 22_02 22_03
 
 EXE = ${GEN_EXE}
 
