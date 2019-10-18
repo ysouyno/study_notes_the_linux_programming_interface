@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = display_env modify_env longjmp setjmp_vars
+GEN_EXE = display_env modify_env longjmp setjmp_vars necho
 
 EXE = ${GEN_EXE}
 
