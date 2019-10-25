@@ -9,7 +9,8 @@ DIRS = lib \
 	proccred \
 	time \
 	signals \
-	procexec
+	procexec \
+	threads
 
 BUILD_DIRS = ${DIRS}
 
