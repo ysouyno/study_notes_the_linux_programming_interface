@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-GEN_EXE = simple_thread
+GEN_EXE = simple_thread thread_incr thread_incr_mutex prod_no_condvar
 
 LINUX_EXE =
 
