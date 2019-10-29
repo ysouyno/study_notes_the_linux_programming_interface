@@ -1,7 +1,8 @@
 include ../Makefile.inc
 
 GEN_EXE = simple_thread thread_incr thread_incr_mutex prod_no_condvar \
-	prod_condvar thread_multijoin strerror_test strerror_test_tsd
+	prod_condvar thread_multijoin strerror_test strerror_test_tsd \
+	thread_cancel thread_cleanup
 
 LINUX_EXE = strerror_test_tls
 
