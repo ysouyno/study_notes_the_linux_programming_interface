@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01 22_02 22_03 \
 	24_02 24_03 24_05 26_01 26_02 26_03 26_04 29_01 31_01 44_01 \
-	44_02_test_0 44_02_test_1 44_03
+	44_02_test_0 44_02_test_1 44_03 44_04
 
 EXE = ${GEN_EXE}
 
@@ -18,6 +18,8 @@ allgen: ${GEN_EXE}
 44_02_test_1: 44_02.o
 
 44_03.o: fifo_seqnum.h
+
+44_04.o: fifo_seqnum.h
 
 clean:
 	${RM} ${EXE} *.o
