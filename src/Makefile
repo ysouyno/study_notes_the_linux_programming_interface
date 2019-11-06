@@ -11,7 +11,8 @@ DIRS = lib \
 	signals \
 	procexec \
 	threads \
-	pipes
+	pipes \
+	svmsg
 
 BUILD_DIRS = ${DIRS}
 
