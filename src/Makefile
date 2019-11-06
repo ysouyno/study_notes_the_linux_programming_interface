@@ -12,7 +12,8 @@ DIRS = lib \
 	procexec \
 	threads \
 	pipes \
-	svmsg
+	svmsg \
+	svsem
 
 BUILD_DIRS = ${DIRS}
 
