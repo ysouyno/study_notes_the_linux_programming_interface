@@ -1,17 +1,17 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/msg.h>
+#include <sys/sem.h>
 #include <sys/stat.h>
 #include "tlpi_hdr.h"
 
 static void usage_error(const char *prog_name, const char *msg)
 {
-  if (msg == NULL) {
+  if (msg != NULL) {
     fprintf(stderr, "%s", msg);
   }
 
-  fprintf(stderr, "Usage: %s [-cv] {-f pathname | -k key | -p} "
-          "[octal-perms]\n", prog_name);
+  fprintf(stderr, "Usage: %s [-cx] {-f pathname | -k | -p} "
+          "num-sems [octal-perms]\n", prog_name);
   fprintf(stderr, "    -c          Use IPC_CREAT flag\n");
   fprintf(stderr, "    -x          Use IPC_EXCL flag\n");
   fprintf(stderr, "    -f pathname Generate key using ftok()\n");
@@ -23,16 +23,11 @@ static void usage_error(const char *prog_name, const char *msg)
 
 int main(int argc, char *argv[])
 {
-  int num_key_flags; // Count -f, -k, and -p options
-  int flags, msqid, opt;
+  int flags, semid, num_sems, opt;
+  int num_key_flags;
   unsigned int perms;
   long lkey;
   key_t key;
-
-  // Parse command-line options and arguments
-
-  num_key_flags = 0;
-  flags = 0;
 
   while ((opt = getopt(argc, argv, "cf:k:px")) != -1) {
     switch (opt) {
@@ -63,7 +58,7 @@ int main(int argc, char *argv[])
       flags |= IPC_EXCL;
       break;
     default:
-      usage_error(argv[0], "Bad option\n");
+      usage_error(argv[0], NULL);
     }
   }
 
@@ -72,14 +67,20 @@ int main(int argc, char *argv[])
                 "or -p must be supplied\n");
   }
 
-  perms = (optind == argc) ? (S_IRUSR | S_IWUSR) :
-    getInt(argv[optind], GN_BASE_8, "octal-perms");
-
-  msqid = msgget(key, perms);
-  if (msqid == -1) {
-    errExit("msgget");
+  if (optind >= argc) {
+    usage_error(argv[0], "Must specify number of semaphore\n");
   }
 
-  printf("%d\n", msqid);
+  num_sems = getInt(argv[optind], 0, "num-sems");
+
+  perms = (argc <= optind + 1) ? (S_IRUSR | S_IWUSR) :
+    getInt(argv[optind + 1], GN_BASE_8, "octal-perms");
+
+  semid = semget(key, num_sems, flags | perms);
+  if (semid == -1) {
+    errExit("semget");
+  }
+
+  printf("%d\n", semid);
   exit(EXIT_SUCCESS);
 }

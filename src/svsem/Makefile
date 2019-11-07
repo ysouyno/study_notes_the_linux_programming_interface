@@ -1,6 +1,7 @@
 include ../Makefile.inc
 
-GEN_EXE = svsem_demo svsem_mon svsem_setall svsem_good_init
+GEN_EXE = svsem_demo svsem_mon svsem_setall svsem_good_init svsem_op \
+	svsem_create svsem_rm
 
 LINUX_EXE =
 
