@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     errExit("sigaction");
   }
 
-  for (; !got_sig_term; ) {              // Read requests and send responses
+  for (; !got_sig_term; ) { // Read requests and send responses
     if (read(server_fd, &req, sizeof(struct request)) !=
         sizeof(struct request)) {
       fprintf(stderr, "Error reading request; discarding\n");
