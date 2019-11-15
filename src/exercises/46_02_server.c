@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   // Read requests, handle each in a separate child process
 
   for (; ; ) {
-    msg_len = msgrcv(server_id, &req, REQ_MSG_SIZE, 0, 0);
+    msg_len = msgrcv(server_id, &req, REQ_MSG_SIZE, -1, 0);
     if (msg_len == -1) {
       if (errno == EINTR) {            // Interrupted by SIGCHLD handler?
         continue;                      // ... then restart msgrcv()
