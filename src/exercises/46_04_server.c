@@ -1,3 +1,4 @@
+#include <syslog.h>
 #include "svmsg_file.h"
 
 #define SVMSG_SERVER_FILE "/tmp/svmsg_server_file"
@@ -44,9 +45,16 @@ static void serve_request(const struct request_msg *req)
   resp.mtype = RESP_MT_DATA;
   while ((num_read = read(fd, resp.data, RESP_MSG_SIZE)) > 0) {
     if (msgsnd(req->client_id, &resp, num_read, 0) == -1) {
+      openlog("46_04_server", LOG_CONS | LOG_PID, LOG_SYSLOG);
+      syslog(LOG_ERR, "msgsnd error: %d", errno);
+      closelog();
       break;
     }
   }
+
+  openlog("46_04_server", LOG_CONS | LOG_PID, LOG_SYSLOG);
+  syslog(LOG_ERR, "%s", "test syslog");
+  closelog();
 
   // Send a message of type RESP_MT_END to signify end-of-file
 
