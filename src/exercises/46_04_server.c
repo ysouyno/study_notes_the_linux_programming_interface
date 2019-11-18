@@ -3,9 +3,9 @@
 
 #define SVMSG_SERVER_FILE "/tmp/svmsg_server_file"
 
-static volatile sig_atomic_t got_sig_quit = 0;
-
 const int buff_len = 128;
+
+static int server_id;
 
 static void grim_reaper(int sig)       // SIGCHLD handler
 {
@@ -20,9 +20,14 @@ static void grim_reaper(int sig)       // SIGCHLD handler
 
 static void handler(int sig)
 {
-  if (sig == SIGINT || sig == SIGQUIT) {
-    got_sig_quit = 1;
+  if (msgctl(server_id, IPC_RMID, NULL) == -1) {
+    errExit("msgctl");
   }
+
+  unlink(SVMSG_SERVER_FILE);
+
+  signal(sig, SIG_DFL);
+  raise(sig);
 }
 
 static void serve_request(const struct request_msg *req)
@@ -67,7 +72,6 @@ int main(int argc, char *argv[])
   struct request_msg req;
   pid_t pid;
   ssize_t msg_len;
-  int server_id;
   struct sigaction sa;
   int fd;
   char buff[buff_len];
@@ -107,13 +111,13 @@ int main(int argc, char *argv[])
     errExit("sigaction");
   }
 
-  if (sigaction(SIGQUIT, &sa, NULL) == -1) {
+  if (sigaction(SIGTERM, &sa, NULL) == -1) {
     errExit("sigaction");
   }
 
   // Read requests, handle each in a separate child process
 
-  for (; !got_sig_quit; ) {
+  for (; ; ) {
     msg_len = msgrcv(server_id, &req, REQ_MSG_SIZE, 0, 0);
     if (msg_len == -1) {
       if (errno == EINTR) {            // Interrupted by SIGCHLD handler?
@@ -137,14 +141,6 @@ int main(int argc, char *argv[])
 
     // Parent loops to receive next client request
   }
-
-  // If msgrcv() or fork() fails, remove server MQ and exit
-
-  if (msgctl(server_id, IPC_RMID, NULL) == -1) {
-    errExit("msgctl");
-  }
-
-  unlink(SVMSG_SERVER_FILE);
 
   exit(EXIT_SUCCESS);
 }
