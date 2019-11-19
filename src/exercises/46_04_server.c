@@ -1,5 +1,6 @@
 #include <syslog.h>
 #include "svmsg_file.h"
+#include "become_daemon.h"
 
 #define SVMSG_SERVER_FILE "/tmp/svmsg_server_file"
 
@@ -75,6 +76,8 @@ int main(int argc, char *argv[])
   struct sigaction sa;
   int fd;
   char buff[buff_len];
+
+  becomeDaemon(0);
 
   fd = open(SVMSG_SERVER_FILE, O_RDWR | O_CREAT | O_SYNC, S_IRUSR | S_IWUSR);
   if (fd == -1) {
