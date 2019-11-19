@@ -21,14 +21,22 @@ static void grim_reaper(int sig)       // SIGCHLD handler
 
 static void handler(int sig)
 {
-  if (msgctl(server_id, IPC_RMID, NULL) == -1) {
-    errExit("msgctl");
+  if (sig == SIGINT || sig == SIGTERM) {
+    if (msgctl(server_id, IPC_RMID, NULL) == -1) {
+      errExit("msgctl");
+    }
+
+    unlink(SVMSG_SERVER_FILE);
+
+    signal(sig, SIG_DFL);
+    raise(sig);
   }
 
-  unlink(SVMSG_SERVER_FILE);
-
-  signal(sig, SIG_DFL);
-  raise(sig);
+  if (sig == SIGALRM) {
+    openlog("46_04_server", LOG_CONS | LOG_PID, LOG_SYSLOG);
+    syslog(LOG_ERR, "PID: %ld, SIGALRM", (long)getpid());
+    closelog();
+  }
 }
 
 static void serve_request(const struct request_msg *req)
@@ -36,6 +44,7 @@ static void serve_request(const struct request_msg *req)
   struct response_msg resp;
   ssize_t num_read;
   int fd;
+  int saved_errno, ret;
 
   fd = open(req->pathname, O_RDONLY);
   if (fd == -1) {
@@ -48,23 +57,29 @@ static void serve_request(const struct request_msg *req)
   // Transmit file contents in messages with type RESP_MT_DATA. We don't
   // diagnose read() and msgsnd() errors since we can't notify client.
 
+  alarm(5);
+
   resp.mtype = RESP_MT_DATA;
   while ((num_read = read(fd, resp.data, RESP_MSG_SIZE)) > 0) {
-    if (msgsnd(req->client_id, &resp, num_read, IPC_NOWAIT) == -1) {
-      openlog("46_04_server", LOG_CONS | LOG_PID, LOG_SYSLOG);
-      if (errno == EAGAIN) {
-        syslog(LOG_ERR, "client (%d) may have disappeared",
-               req->client_id);
-        if (msgctl(req->client_id, IPC_RMID, NULL) == -1) {
-          syslog(LOG_ERR, "msgctl error: %d", errno);
-        }
-      }
-      else {
-        syslog(LOG_ERR, "msgsnd error: %d", errno);
-      }
-      closelog();
-
+    if ((ret = msgsnd(req->client_id, &resp, num_read, 0)) == -1) {
       break;
+    }
+  }
+
+  saved_errno = errno;
+  alarm(0);
+  errno = saved_errno;
+
+  if (ret == -1) {                     // Indispensable
+    if (errno == EINTR) {
+      openlog("46_04_server", LOG_CONS | LOG_PID, LOG_SYSLOG);
+      syslog(LOG_ERR, "msgsnd timed out");
+
+      if (msgctl(req->client_id, IPC_RMID, NULL) == -1) {
+        syslog(LOG_ERR, "msgctl error: %d", errno);
+      }
+
+      closelog();
     }
   }
 
@@ -121,6 +136,10 @@ int main(int argc, char *argv[])
   }
 
   if (sigaction(SIGTERM, &sa, NULL) == -1) {
+    errExit("sigaction");
+  }
+
+  if (sigaction(SIGALRM, &sa, NULL) == -1) {
     errExit("sigaction");
   }
 
