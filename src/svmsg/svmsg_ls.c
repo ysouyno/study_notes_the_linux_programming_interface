@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   }
 
   printf("maxtind: %d\n\n", maxtind);
-  printf("index     id       key      message\n");
+  printf("index     id       key      messages\n");
 
   // Retrieve and display information from each element of `entries` array
 
