@@ -3,7 +3,8 @@ include ../Makefile.inc
 GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01 22_02 22_03 \
 	24_02 24_03 24_05 26_01 26_02 26_03 26_04 29_01 31_01 44_01 \
 	44_02_test_0 44_02_test_1 44_03 44_04 45_01 46_02_server 46_02_client \
-	46_04_server 46_04_client 46_05_client 47_02 47_07
+	46_04_server 46_04_client 46_05_client 47_02 47_07 \
+	48_01_xfr_writer 48_01_xfr_reader
 
 EXE = ${GEN_EXE}
 
@@ -21,6 +22,8 @@ allgen: ${GEN_EXE}
 44_03.o: fifo_seqnum.h
 
 44_04.o: fifo_seqnum.h
+
+48_01_xfr_writer.o 48_01_xfr_reader.o: svshm_xfr.h
 
 clean:
 	${RM} ${EXE} *.o
