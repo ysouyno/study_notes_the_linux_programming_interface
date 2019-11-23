@@ -13,7 +13,8 @@ DIRS = lib \
 	threads \
 	pipes \
 	svmsg \
-	svsem
+	svsem \
+	svshm
 
 BUILD_DIRS = ${DIRS}
 
