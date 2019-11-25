@@ -14,7 +14,8 @@ DIRS = lib \
 	pipes \
 	svmsg \
 	svsem \
-	svshm
+	svshm \
+	mmap
 
 BUILD_DIRS = ${DIRS}
 
