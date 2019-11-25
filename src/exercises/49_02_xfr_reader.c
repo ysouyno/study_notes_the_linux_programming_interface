@@ -1,9 +1,15 @@
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "svshm_xfr.h"
+
+#define MMAP_TMP_FILE "/tmp/mmap_tmp_file"
 
 int main(int argc, char *argv[])
 {
-  int semid, shmid, xfrs, bytes;
+  int semid, xfrs, bytes;
   struct shmseg *shmp;
+  int fd;
+  char *addr;
 
   // Get IDs for semaphore set and shared memory created by writer
 
@@ -12,14 +18,14 @@ int main(int argc, char *argv[])
     errExit("semget");
   }
 
-  shmid = shmget(SHM_KEY, 0, 0);
-  if (shmid == -1) {
-    errExit("shmget");
+  fd = open(MMAP_TMP_FILE, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+  if (fd == -1) {
+    errExit("open");
   }
 
-  shmp = shmat(shmid, NULL, SHM_RDONLY);
-  if (shmp == (void *)-1) {
-    errExit("shmat");
+  addr = mmap(NULL, sizeof(struct shmseg), PROT_READ, MAP_SHARED, fd, 0);
+  if (addr == MAP_FAILED) {
+    errExit("mmap");
   }
 
   // Transfer blocks of data from shared memory to stdout
@@ -28,6 +34,8 @@ int main(int argc, char *argv[])
     if (reserveSem(semid, READ_SEM) == -1) { // Wait for out turn
       errExit("reserveSem");
     }
+
+    shmp = (struct shmseg *)addr;
 
     if (shmp->cnt == 0) { // Writer encountered EOF
       break;
@@ -42,10 +50,6 @@ int main(int argc, char *argv[])
     if (releaseSem(semid, WRITE_SEM) == -1) { // Give write a turn
       errExit("releaseSem");
     }
-  }
-
-  if (shmdt(shmp) == -1) {
-    errExit("shmdt");
   }
 
   // Give writer one more turn, so it can clean up
