@@ -15,7 +15,8 @@ DIRS = lib \
 	svmsg \
 	svsem \
 	svshm \
-	mmap
+	mmap \
+	pmsg
 
 BUILD_DIRS = ${DIRS}
 
