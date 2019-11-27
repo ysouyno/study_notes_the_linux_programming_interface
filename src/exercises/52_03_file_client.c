@@ -1,65 +1,56 @@
-#include "svmsg_file.h"
-
-static int client_id;
-
-static void remove_queue()
-{
-  if (msgctl(client_id, IPC_RMID, NULL) == -1) {
-    errExit("msgctl");
-  }
-}
+#include "52_03.h"
 
 int main(int argc, char *argv[])
 {
-  struct response_msg resp;
-  struct request_msg req;
-  int server_id, num_msgs;
+  struct resp_msg resp;
+  struct requ_msg requ;
+  int num_msgs;
   ssize_t msg_len, tot_bytes;
+  mqd_t mqd_server, mqd_client;
+  struct mq_attr attr;
+  unsigned int prio;
 
   if (argc != 2 || strcmp(argv[1], "--help") == 0) {
     usageErr("%s pathname\n", argv[0]);
   }
 
-  if (strlen(argv[1]) > sizeof(req.pathname) - 1) {
+  if (strlen(argv[1]) > sizeof(requ.pathname) - 1) {
     cmdLineErr("pathname too long (max: %ld bytes)\n",
-               (long)sizeof(req.pathname) - 1);
+               (long)sizeof(requ.pathname) - 1);
   }
 
-  // Get server's queue identifier; crate queue for response
-
-  server_id = msgget(SERVER_KEY, S_IWUSR);
-  if (server_id == -1) {
-    errExit("msgget - server message queue");
-  }
-
-  client_id = msgget(IPC_PRIVATE, S_IRUSR | S_IWUSR | S_IWGRP);
-  if (client_id == -1) {
-    errExit("msgget - client message queue");
-  }
-
-  if (atexit(remove_queue) != 0) {
-    errExit("atexit");
+  mqd_server = mq_open(SERVER_MQ_NAME, O_WRONLY);
+  if (mqd_server == (mqd_t)-1) {
+    errExit("mq_open server");
   }
 
   // Send message asking for file named in argv[1]
 
-  req.mtype = 1;                                 // Any type will do
-  req.client_id = client_id;
-  strncpy(req.pathname, argv[1], sizeof(req.pathname) - 1);
-  req.pathname[sizeof(req.pathname) - 1] = '\0'; // Ensure string is terminated
+  snprintf(requ.client_mq_name, CLIENT_MQ_NAME_LEN, CLIENT_MQ_NAME,
+           (long)getpid());
+  strncpy(requ.pathname, argv[1], sizeof(requ.pathname) - 1);
+  requ.pathname[sizeof(requ.pathname) - 1] = '\0';
 
-  if (msgsnd(server_id, &req, REQ_MSG_SIZE, 0) == -1) {
-    errExit("msgsnd");
+  attr.mq_msgsize = RESP_SIZE;
+  attr.mq_maxmsg = 10;
+  mqd_client = mq_open(requ.client_mq_name, O_CREAT | O_RDWR,
+                       S_IRUSR | S_IWUSR, &attr);
+  if (mqd_client == (mqd_t)-1) {
+    errExit("mq_open client");
+  }
+
+  if (mq_send(mqd_server, &requ, REQU_SIZE, 0) == -1) {
+    errExit("mq_send");
   }
 
   // Get first response, which may be failure notification
 
-  msg_len = msgrcv(client_id, &resp, RESP_MSG_SIZE, 0, 0);
+  msg_len = mq_receive(mqd_client, &resp, RESP_SIZE, &prio);
   if (msg_len == -1) {
-    errExit("msgrcv");
+    errExit("mq_receive");
   }
 
-  if (resp.mtype == RESP_MT_FAILURE) {
+  if (resp.type == RESP_MT_FAILURE) {
     printf("%s\n", resp.data);                   // Display msg from server
     exit(EXIT_SUCCESS);
   }
@@ -67,17 +58,22 @@ int main(int argc, char *argv[])
   // File was opened successfully by server; process message
   // (including the one already received) containing file data
 
-  tot_bytes = msg_len;
-  for (num_msgs = 1; resp.mtype == RESP_MT_DATA; ++num_msgs) {
-    msg_len = msgrcv(client_id, &resp, RESP_MSG_SIZE, 0, 0);
+  tot_bytes = 0;
+  for (num_msgs = 1; resp.type == RESP_MT_DATA; ++num_msgs) {
+    msg_len = mq_receive(mqd_client, &resp, RESP_SIZE, &prio);
     if (msg_len == -1) {
-      errExit("msgrcv");
+      errExit("mq_receive");
     }
 
     tot_bytes += msg_len;
+    tot_bytes -= sizeof(resp.type);
   }
 
   printf("Received %ld bytes (%d messages)\n", (long)tot_bytes, num_msgs);
+
+  if (mq_unlink(requ.client_mq_name) == -1) {
+    errExit("mq_unlink");
+  }
 
   exit(EXIT_SUCCESS);
 }

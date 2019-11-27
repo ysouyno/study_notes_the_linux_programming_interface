@@ -1,6 +1,6 @@
-#include "svmsg_file.h"
+#include "52_03.h"
 
-static void grim_reaper(int sig)       // SIGCHLD handler
+static void grim_reaper(int sig)
 {
   int saved_errno;
 
@@ -11,48 +11,63 @@ static void grim_reaper(int sig)       // SIGCHLD handler
   errno = saved_errno;
 }
 
-static void serve_request(const struct request_msg *req)
+static void serve_request(const struct requ_msg *requ)
 {
-  struct response_msg resp;
+  struct resp_msg resp;
   ssize_t num_read;
   int fd;
+  mqd_t mqd;
+  int tot_bytes;
 
-  fd = open(req->pathname, O_RDONLY);
+  mqd = mq_open(requ->client_mq_name, O_WRONLY);
+  if (mqd == (mqd_t)-1) {
+    errExit("mq_open client");
+  }
+
+  fd = open(requ->pathname, O_RDONLY);
   if (fd == -1) {
-    resp.mtype = RESP_MT_FAILURE;
+    resp.type = RESP_MT_FAILURE;
     snprintf(resp.data, sizeof(resp.data), "%s", "Couldn't open");
-    msgsnd(req->client_id, &resp, strlen(resp.data) + 1, 0);
+    mq_send(mqd, &resp, RESP_SIZE, 0);
     exit(EXIT_FAILURE);
   }
 
   // Transmit file contents in messages with type RESP_MT_DATA. We don't
   // diagnose read() and msgsnd() errors since we can't notify client.
 
-  resp.mtype = RESP_MT_DATA;
-  while ((num_read = read(fd, resp.data, RESP_MSG_SIZE)) > 0) {
-    if (msgsnd(req->client_id, &resp, num_read, 0) == -1) {
+  tot_bytes = 0;
+  resp.type = RESP_MT_DATA;
+  while ((num_read = read(fd, resp.data, DATA_SIZE)) > 0) {
+    if (mq_send(mqd, &resp, num_read + sizeof(resp.type), 0) == -1) {
+      errMsg("mq_send");
       break;
     }
+
+    tot_bytes += num_read;
   }
+  printf("Sent %ld bytes\n", (long)tot_bytes);
 
   // Send a message of type RESP_MT_END to signify end-of-file
 
-  resp.mtype = RESP_MT_END;
-  msgsnd(req->client_id, &resp, 0, 0); // Zero-length mtext
+  resp.type = RESP_MT_END;
+  mq_send(mqd, &resp, RESP_SIZE, 0);
 }
 
 int main(int argc, char *argv[])
 {
-  struct request_msg req;
+  struct requ_msg req;
   pid_t pid;
   ssize_t msg_len;
-  int server_id;
   struct sigaction sa;
+  mqd_t mqd;
+  struct mq_attr attr;
+  unsigned int prio;
 
-  server_id = msgget(SERVER_KEY, IPC_CREAT | IPC_EXCL |
-                     S_IRUSR | S_IWUSR | S_IWGRP);
-  if (server_id == -1) {
-    errExit("msgget");
+  attr.mq_msgsize = REQU_SIZE;
+  attr.mq_maxmsg = 10;
+  mqd = mq_open(SERVER_MQ_NAME, O_CREAT, S_IRUSR | S_IWUSR, &attr);
+  if (mqd == (mqd_t)-1) {
+    errMsg("mq_open server");
   }
 
   sigemptyset(&sa.sa_mask);
@@ -65,14 +80,14 @@ int main(int argc, char *argv[])
   // Read requests, handle each in a separate child process
 
   for (; ; ) {
-    msg_len = msgrcv(server_id, &req, REQ_MSG_SIZE, 0, 0);
+    msg_len = mq_receive(mqd, &req, REQU_SIZE, &prio);
     if (msg_len == -1) {
-      if (errno == EINTR) {            // Interrupted by SIGCHLD handler?
-        continue;                      // ... then restart msgrcv()
+      if (errno == EINTR) {
+        continue;
       }
 
-      errMsg("msgrcv");                // Some other error
-      break;                           // ... so terminate loop
+      errMsg("mq_receive");
+      break;
     }
 
     pid = fork();
@@ -81,7 +96,7 @@ int main(int argc, char *argv[])
       break;
     }
 
-    if (pid == 0) {                    // Child handles request
+    if (pid == 0) {
       serve_request(&req);
       _exit(EXIT_SUCCESS);
     }
@@ -89,10 +104,8 @@ int main(int argc, char *argv[])
     // Parent loops to receive next client request
   }
 
-  // If msgrcv() or fork() fails, remove server MQ and exit
-
-  if (msgctl(server_id, IPC_RMID, NULL) == -1) {
-    errExit("msgctl");
+  if (mq_unlink(SERVER_MQ_NAME) == -1) {
+    errExit("mq_unlink");
   }
 
   exit(EXIT_SUCCESS);
