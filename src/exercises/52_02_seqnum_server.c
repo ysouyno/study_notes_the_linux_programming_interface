@@ -1,69 +1,60 @@
-#include <signal.h>
+#include <mqueue.h>
+#include <fcntl.h>
 #include "fifo_seqnum.h"
+
+#define CLIENT_MQ_TEMPLATE "/seqnum_cl.%ld"
+#define CLIENT_MQ_NAME_LEN (sizeof(CLIENT_MQ_TEMPLATE) + 20)
+#define SERVER_MQ_NAME "/mq_seqnum"
 
 int main(int argc, char *argv[])
 {
-  int server_fd, dummy_fd, client_fd;
-  char client_fifo[CLIENT_FIFO_NAME_LEN];
+  char client_mq[CLIENT_MQ_NAME_LEN];
   struct request req;
   struct response resp;
   int seq_num = 0;          // This is our "service"
+  mqd_t mqd_client, mqd_server;
+  struct mq_attr attr;
+  int num_read;
+  unsigned int prio;
 
-  // Create well-known FIFO, and open it for reading
+  // Create well-known MQ, and open it for reading
 
-  umask(0);                 // So we get the permissions we want
+  attr.mq_msgsize = sizeof(struct request);
+  attr.mq_maxmsg = 10;
 
-  if (mkfifo(SERVER_FIFO, S_IRUSR | S_IWUSR | S_IWGRP) == -1 &&
-      errno != EEXIST) {
-    errExit("mkfifo", SERVER_FIFO);
-  }
-
-  // The server's open() blocks until the first client opens
-  // the other end of the server FIFO for writing
-
-  server_fd = open(SERVER_FIFO, O_RDONLY);
-  if (server_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
-  }
-
-  // Open an extra write descriptor, so that we never see EOF
-
-  dummy_fd = open(SERVER_FIFO, O_WRONLY);
-  if (dummy_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
-  }
-
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-    errExit("signal");
+  mqd_server = mq_open(SERVER_MQ_NAME, O_CREAT, S_IRUSR | S_IWUSR, &attr);
+  if (mqd_server == (mqd_t)-1) {
+    errExit("mq_open server");
   }
 
   for (; ; ) {              // Read requests and send responses
-    if (read(server_fd, &req, sizeof(struct request)) !=
-        sizeof(struct request)) {
+    num_read = mq_receive(mqd_server, &req, sizeof(struct request), &prio);
+    if (num_read == -1) {
       fprintf(stderr, "Error reading request; discarding\n");
-      continue;             // Either partial read or error
-    }
-
-    // Open client FIFO (previously created by client)
-
-    snprintf(client_fifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
-             (long)req.pid);
-    client_fd = open(client_fifo, O_WRONLY);
-    if (client_fd == -1) {  // Open failed, give up on client
-      errMsg("open %s", client_fifo);
       continue;
     }
 
-    // Send responses and close FIFO
+    // Open client MQ (previously created by client)
 
-    resp.seq_num = seq_num;
-    if (write(client_fd, &resp, sizeof(struct response)) !=
-        sizeof(struct response)) {
-      fprintf(stderr, "Error writing to FIFO %s\n", client_fifo);
+    snprintf(client_mq, CLIENT_MQ_NAME_LEN, CLIENT_MQ_TEMPLATE,
+             (long)req.pid);
+
+    mqd_client = mq_open(client_mq, O_WRONLY);
+    if (mqd_client == (mqd_t)-1) {
+      errMsg("mq_open %s", client_mq);
+      continue;
     }
 
-    if (close(client_fd) == -1) {
-      errMsg("close");
+    // Send responses and close MQ
+
+    resp.seq_num = seq_num;
+
+    if (mq_send(mqd_client, &resp, sizeof(struct response), 0) == -1) {
+      fprintf(stderr, "Error writing to MQ %s\n", client_mq);
+    }
+
+    if (mq_close(mqd_client) == -1) {
+      errMsg("mq_close");
     }
 
     seq_num += req.seq_len; // Update our sequence number

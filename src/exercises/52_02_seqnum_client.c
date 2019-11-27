@@ -1,61 +1,65 @@
+#include <mqueue.h>
+#include <fcntl.h>
 #include "fifo_seqnum.h"
 
-static char client_fifo[CLIENT_FIFO_NAME_LEN];
+#define CLIENT_MQ_TEMPLATE "/seqnum_cl.%ld"
+#define CLIENT_MQ_NAME_LEN (sizeof(CLIENT_MQ_TEMPLATE) + 20)
+#define SERVER_MQ_NAME "/mq_seqnum"
 
-static void remove_fifo() // Invoked on exit to delete client FIFO
+static char client_mq[CLIENT_MQ_NAME_LEN];
+
+static void remove_mq() // Invoked on exit to delete client MQ
 {
-  unlink(client_fifo);
+  mq_unlink(client_mq);
 }
 
 int main(int argc, char *argv[])
 {
-  int server_fd, client_fd;
   struct request req;
   struct response resp;
+  mqd_t mqd_client, mqd_server;
+  int num_read;
+  unsigned int prio;
+  struct mq_attr attr;
 
   if (argc > 1 && strcmp(argv[1], "--help") == 0) {
     usageErr("%s [seq-len...]\n", argv[0]);
   }
 
-  // Create our FIFO (before sending request, to avoid a race)
+  // Create our MQ (before sending request, to avoid a race)
 
-  umask(0);               // So we get the permission we want
-  snprintf(client_fifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
+  snprintf(client_mq, CLIENT_MQ_NAME_LEN, CLIENT_MQ_TEMPLATE,
            (long)getpid());
-  if (mkfifo(client_fifo, S_IRUSR | S_IWUSR | S_IWGRP) == -1
-      && errno == EEXIST) {
-    errExit("mkfifo %s", client_fifo);
+
+  attr.mq_msgsize = sizeof(struct response);
+  attr.mq_maxmsg = 10;
+
+  mqd_client = mq_open(client_mq, O_CREAT, S_IRUSR | S_IWUSR, &attr);
+  if (mqd_client == (mqd_t)-1) {
+    errExit("mq_open client");
   }
 
-  if (atexit(remove_fifo) != 0) {
+  if (atexit(remove_mq) != 0) {
     errExit("atexit");
   }
 
-  // Construct request message, open server FIFO, and send request
+  // Construct request message, open server MQ, and send request
 
   req.pid = getpid();
   req.seq_len = (argc > 1) ? getInt(argv[1], GN_GT_0, "seq-len") : 1;
 
-  server_fd = open(SERVER_FIFO, O_WRONLY);
-  if (server_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
+  mqd_server = mq_open(SERVER_MQ_NAME, O_WRONLY);
+  if (mqd_server == (mqd_t)-1) {
+    errExit("mq_open server");
   }
 
-  if (write(server_fd, &req, sizeof(struct request)) !=
-      sizeof(struct request)) {
-    fatal("Can't write to server");
+  if (mq_send(mqd_server, &req, sizeof(struct request), 0) == -1) {
+    errExit("mq_send");
   }
 
-  // Open our FIFO, read and display response
-
-  client_fd = open(client_fifo, O_RDONLY);
-  if (client_fd == -1) {
-    errExit("open %s", client_fifo);
-  }
-
-  if (read(client_fd, &resp, sizeof(struct response)) !=
-      sizeof(struct response)) {
-    fatal("Can't read response from server");
+  num_read = mq_receive(mqd_client, &resp, sizeof(struct response), &prio);
+  if (num_read == -1) {
+    errExit("mq_receive");
   }
 
   printf("%d\n", resp.seq_num);
