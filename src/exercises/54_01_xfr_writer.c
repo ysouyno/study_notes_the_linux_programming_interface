@@ -1,11 +1,18 @@
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "svshm_xfr.h"
 #include "semun.h"
 
+#define SHM_TEST_NAME "/shm_demo"
+
 int main(int argc, char *argv[])
 {
-  int semid, shmid, bytes, xfrs;
+  int semid, bytes, xfrs;
   struct shmseg *shmp;
   union semun dummy;
+  int fd;
+  void *addr;
 
   semid = semget(SEM_KEY, 2, IPC_CREAT | OBJ_PERMS);
   if (semid == -1) {
@@ -20,15 +27,22 @@ int main(int argc, char *argv[])
     errExit("initSemInUse");
   }
 
-  shmid = shmget(SHM_KEY, sizeof(struct shmseg), IPC_CREAT | OBJ_PERMS);
-  if (shmid == -1) {
-    errExit("shmget");
+  fd = shm_open(SHM_TEST_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+  if (fd == -1) {
+    errExit("shm_open");
   }
 
-  shmp = shmat(shmid, NULL, 0);
-  if (shmp == (void *)-1) {
-    errExit("shmat");
+  if (ftruncate(fd, sizeof(struct shmseg)) == -1) {
+    errExit("ftruncate");
   }
+
+  addr = mmap(NULL, sizeof(struct shmseg), PROT_READ | PROT_WRITE,
+              MAP_SHARED, fd, 0);
+  if (addr == MAP_FAILED) {
+    errExit("mmap");
+  }
+
+  shmp = addr;
 
   // Transfer blocks of data from stdin to shared memory
 
@@ -63,14 +77,6 @@ int main(int argc, char *argv[])
 
   if (semctl(semid, 0, IPC_RMID, dummy) == -1) {
     errExit("semctl");
-  }
-
-  if (shmdt(shmp) == -1) {
-    errExit("shmdt");
-  }
-
-  if (shmctl(shmid, IPC_RMID, 0) == -1) {
-    errExit("shmctl");
   }
 
   fprintf(stderr, "Send %d bytes (%d xfrs)\n", bytes, xfrs);

@@ -1,9 +1,17 @@
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include "svshm_xfr.h"
+
+#define SHM_TEST_NAME "/shm_demo"
 
 int main(int argc, char *argv[])
 {
-  int semid, shmid, xfrs, bytes;
+  int semid, xfrs, bytes;
   struct shmseg *shmp;
+  int fd;
+  char *addr;
+  struct stat sb;
 
   // Get IDs for semaphore set and shared memory created by writer
 
@@ -12,15 +20,21 @@ int main(int argc, char *argv[])
     errExit("semget");
   }
 
-  shmid = shmget(SHM_KEY, 0, 0);
-  if (shmid == -1) {
-    errExit("shmget");
+  fd = shm_open(SHM_TEST_NAME, O_RDWR, 0); // Open existing object
+  if (fd == -1) {
+    errExit("shm_open");
   }
 
-  shmp = shmat(shmid, NULL, SHM_RDONLY);
-  if (shmp == (void *)-1) {
-    errExit("shmat");
+  if (fstat(fd, &sb) == -1) {
+    errExit("fstat");
   }
+
+  addr = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if (addr == MAP_FAILED) {
+    errExit("mmap");
+  }
+
+  shmp = (struct shmseg *)addr;
 
   // Transfer blocks of data from shared memory to stdout
 
@@ -42,10 +56,6 @@ int main(int argc, char *argv[])
     if (releaseSem(semid, WRITE_SEM) == -1) { // Give write a turn
       errExit("releaseSem");
     }
-  }
-
-  if (shmdt(shmp) == -1) {
-    errExit("shmdt");
   }
 
   // Give writer one more turn, so it can clean up
