@@ -5,11 +5,6 @@
 
 #define NOTIFY_SIG SIGUSR1
 
-static void handler(int sig)
-{
-  // Just interrupt sigsuspend()
-}
-
 int main(int argc, char *argv[])
 {
   struct sigevent sev;
@@ -17,8 +12,9 @@ int main(int argc, char *argv[])
   struct mq_attr attr;
   void *buffer;
   ssize_t num_read;
-  sigset_t block_mask, empty_mask;
-  struct sigaction sa;
+  sigset_t all_sigs;
+  int sig;
+  siginfo_t si;
 
   if (argc != 2 || strcmp(argv[1], "--help") == 0) {
     usageErr("%s mq-name\n", argv[0]);
@@ -38,29 +34,39 @@ int main(int argc, char *argv[])
     errExit("malloc");
   }
 
-  sigemptyset(&block_mask);
-  sigaddset(&block_mask, NOTIFY_SIG);
-  if (sigprocmask(SIG_BLOCK, &block_mask, NULL) == -1) {
-    errExit("sigprocmask");
-  }
-
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  sa.sa_handler = handler;
-  if (sigaction(NOTIFY_SIG, &sa, NULL) == -1) {
-    errExit("sigaction");
-  }
-
   sev.sigev_notify = SIGEV_SIGNAL;
   sev.sigev_signo = NOTIFY_SIG;
+  sev.sigev_value.sival_ptr = &mqd;
   if (mq_notify(mqd, &sev) == -1) {
     errExit("mq_notify");
   }
 
-  sigemptyset(&empty_mask);
+  // Block all signals (except SIGKILL and SIGSTOP)
+
+  sigfillset(&all_sigs);
+  if (sigprocmask(SIG_SETMASK, &all_sigs, NULL) == -1) {
+    errExit("sigprocmask");
+  }
 
   for (; ; ) {
-    sigsuspend(&empty_mask); // Wait for notification signal
+    sig = sigwaitinfo(&all_sigs, &si);
+    if (sig == -1) {
+      errExit("sigwaitinfo");
+    }
+
+    if (sig == SIGINT || sig == SIGTERM) {
+      exit(EXIT_SUCCESS);
+    }
+
+    if (sig != NOTIFY_SIG) {
+      continue;
+    }
+
+    printf("si_code:   %s\n", (si.si_code == SI_MESGQ) ? "SI_MESGQ" : "???");
+    printf("si_signo:  %d\n", si.si_signo);
+    printf("si_pid:    %d\n", si.si_pid);
+    printf("si_uid:    %d\n", si.si_uid);
+    printf("sival_ptr: %p\n", si.si_value.sival_ptr);
 
     if (mq_notify(mqd, &sev) == -1) {
       errExit("mq_notify");
