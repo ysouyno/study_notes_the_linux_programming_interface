@@ -1,34 +1,34 @@
+#include <sys/socket.h>
+#include <sys/un.h>
 #include "fifo_seqnum.h"
 
-static char client_fifo[CLIENT_FIFO_NAME_LEN];
-
-static void remove_fifo() // Invoked on exit to delete client FIFO
-{
-  unlink(client_fifo);
-}
+#define SV_SOCK_PATH "/tmp/us_xfr"
 
 int main(int argc, char *argv[])
 {
-  int server_fd, client_fd;
   struct request req;
   struct response resp;
+  int sfd;
+  struct sockaddr_un addr;
 
   if (argc > 1 && strcmp(argv[1], "--help") == 0) {
     usageErr("%s [seq-len...]\n", argv[0]);
   }
 
-  // Create our FIFO (before sending request, to avoid a race)
-
   umask(0);               // So we get the permission we want
-  snprintf(client_fifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
-           (long)getpid());
-  if (mkfifo(client_fifo, S_IRUSR | S_IWUSR | S_IWGRP) == -1
-      && errno == EEXIST) {
-    errExit("mkfifo %s", client_fifo);
+
+  sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sfd == -1) {
+    errExit("socket");
   }
 
-  if (atexit(remove_fifo) != 0) {
-    errExit("atexit");
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, SV_SOCK_PATH, sizeof(addr.sun_path) - 1);
+
+  if (connect(sfd, (struct sockaddr *)&addr,
+              sizeof(struct sockaddr_un)) == -1) {
+    errExit("connect");
   }
 
   // Construct request message, open server FIFO, and send request
@@ -36,25 +36,11 @@ int main(int argc, char *argv[])
   req.pid = getpid();
   req.seq_len = (argc > 1) ? getInt(argv[1], GN_GT_0, "seq-len") : 1;
 
-  server_fd = open(SERVER_FIFO, O_WRONLY);
-  if (server_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
-  }
-
-  if (write(server_fd, &req, sizeof(struct request)) !=
-      sizeof(struct request)) {
+  if (write(sfd, &req, sizeof(struct request)) != sizeof(struct request)) {
     fatal("Can't write to server");
   }
 
-  // Open our FIFO, read and display response
-
-  client_fd = open(client_fifo, O_RDONLY);
-  if (client_fd == -1) {
-    errExit("open %s", client_fifo);
-  }
-
-  if (read(client_fd, &resp, sizeof(struct response)) !=
-      sizeof(struct response)) {
+  if (read(sfd, &resp, sizeof(struct response)) != sizeof(struct response)) {
     fatal("Can't read response from server");
   }
 

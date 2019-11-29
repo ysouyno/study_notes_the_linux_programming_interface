@@ -1,68 +1,62 @@
-#include <signal.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include "fifo_seqnum.h"
+
+#define SV_SOCK_PATH "/tmp/us_xfr"
+#define BACKLOG 5
 
 int main(int argc, char *argv[])
 {
-  int server_fd, dummy_fd, client_fd;
-  char client_fifo[CLIENT_FIFO_NAME_LEN];
   struct request req;
   struct response resp;
   int seq_num = 0;          // This is our "service"
+  struct sockaddr_un addr;
+  int sfd, cfd;
 
   // Create well-known FIFO, and open it for reading
 
   umask(0);                 // So we get the permissions we want
 
-  if (mkfifo(SERVER_FIFO, S_IRUSR | S_IWUSR | S_IWGRP) == -1 &&
-      errno != EEXIST) {
-    errExit("mkfifo", SERVER_FIFO);
+  sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sfd == -1) {
+    errExit("socket");
   }
 
-  // The server's open() blocks until the first client opens
-  // the other end of the server FIFO for writing
-
-  server_fd = open(SERVER_FIFO, O_RDONLY);
-  if (server_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
+  if (remove(SV_SOCK_PATH) == -1 && errno != ENOENT) {
+    errExit("remove-%s", SV_SOCK_PATH);
   }
 
-  // Open an extra write descriptor, so that we never see EOF
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, SV_SOCK_PATH, sizeof(addr.sun_path) - 1);
 
-  dummy_fd = open(SERVER_FIFO, O_WRONLY);
-  if (dummy_fd == -1) {
-    errExit("open %s", SERVER_FIFO);
+  if (bind(sfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) == -1) {
+    errExit("bind");
   }
 
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-    errExit("signal");
+  if (listen(sfd, BACKLOG) == -1) {
+    errExit("listen");
   }
 
   for (; ; ) {              // Read requests and send responses
-    if (read(server_fd, &req, sizeof(struct request)) !=
-        sizeof(struct request)) {
-      fprintf(stderr, "Error reading request; discarding\n");
-      continue;             // Either partial read or error
+    cfd = accept(sfd, NULL, NULL);
+    if (cfd == -1) {
+      errExit("accept");
     }
 
-    // Open client FIFO (previously created by client)
-
-    snprintf(client_fifo, CLIENT_FIFO_NAME_LEN, CLIENT_FIFO_TEMPLATE,
-             (long)req.pid);
-    client_fd = open(client_fifo, O_WRONLY);
-    if (client_fd == -1) {  // Open failed, give up on client
-      errMsg("open %s", client_fifo);
+    if (read(cfd, &req, sizeof(struct request)) != sizeof(struct request)) {
+      fprintf(stderr, "Error reading request; discarding\n");
       continue;
     }
 
-    // Send responses and close FIFO
+    printf("read ok\n");
 
     resp.seq_num = seq_num;
-    if (write(client_fd, &resp, sizeof(struct response)) !=
-        sizeof(struct response)) {
-      fprintf(stderr, "Error writing to FIFO %s\n", client_fifo);
+    if (write(cfd, &resp, sizeof(struct response)) != sizeof(struct response)) {
+      fprintf(stderr, "Error writing to client\n");
     }
 
-    if (close(client_fd) == -1) {
+    if (close(cfd) == -1) {
       errMsg("close");
     }
 
