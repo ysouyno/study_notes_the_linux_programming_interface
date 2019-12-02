@@ -9,7 +9,8 @@ GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01 22_02 22_03 \
 	52_02_seqnum_client 52_03_file_server 52_03_file_client 52_06 \
 	53_01 54_01_xfr_writer 54_01_xfr_reader 57_02_sv 57_02_cl \
 	57_03_seqnum_server 57_03_seqnum_client \
-	59_01_seqnum_sv 59_01_seqnum_cl
+	59_01_seqnum_sv 59_01_seqnum_cl \
+	59_02_seqnum_sv 59_02_seqnum_cl
 
 EXE = ${GEN_EXE}
 
