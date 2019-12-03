@@ -17,7 +17,8 @@ DIRS = lib \
 	svshm \
 	mmap \
 	pmsg \
-	sockets
+	sockets \
+	altio
 
 BUILD_DIRS = ${DIRS}
 
