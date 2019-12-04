@@ -63,27 +63,28 @@ int main(int argc, char *argv[])
       printf("  fd = %d; event: %s%s%s\n", evlist[j].data.fd,
              (evlist[j].events & EPOLLIN)  ? "EPOLLIN "  : "",
              (evlist[j].events & EPOLLHUP) ? "EPOLLHUP " : "",
-             (evlist[j].events & EPOLLERR)  ? "EPOLLERR " : "");
+             (evlist[j].events & EPOLLERR) ? "EPOLLERR " : "");
 
       if (evlist[j].events & EPOLLIN) {
         s = read(evlist[j].data.fd, buf, MAX_BUF);
         if (s == -1) {
           errExit("read");
         }
-        else if (evlist[j].events & (EPOLLHUP | EPOLLERR)) {
-          // After the epoll_wait(), EPOLLIN and EPOLLHUP may both have
-          // been set. But we'll only get here, and thus close the file
-          // descriptor, if EPOLLIN was not set. This ensures that all
-          // outstanding input (possibly more than MAX_BUF bytes) is
-          // consumed (by further loop iterations) before the file
-          // descriptor is closed.
+        printf("    read %d bytes: %.*s\n", s, s, buf);
+      }
+      else if (evlist[j].events & (EPOLLHUP | EPOLLERR)) {
+        // After the epoll_wait(), EPOLLIN and EPOLLHUP may both have
+        // been set. But we'll only get here, and thus close the file
+        // descriptor, if EPOLLIN was not set. This ensures that all
+        // outstanding input (possibly more than MAX_BUF bytes) is
+        // consumed (by further loop iterations) before the file
+        // descriptor is closed.
 
-          printf("    closing fd %d\n", evlist[j].data.fd);
-          if (close(evlist[j].data.fd) == -1) {
-            errExit("close");
-          }
-          num_open_fds--;
+        printf("    closing fd %d\n", evlist[j].data.fd);
+        if (close(evlist[j].data.fd) == -1) {
+          errExit("close");
         }
+        num_open_fds--;
       }
     }
   }
