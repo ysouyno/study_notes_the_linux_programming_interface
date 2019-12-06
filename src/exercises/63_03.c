@@ -39,7 +39,6 @@ void handle_svmsg(int msqid, int fd)
       fatal("partial/failed write to pipe");
     }
   }
-
 }
 
 int main(int argc, char *argv[])
