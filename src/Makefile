@@ -18,7 +18,8 @@ DIRS = lib \
 	mmap \
 	pmsg \
 	sockets \
-	altio
+	altio \
+	pty
 
 BUILD_DIRS = ${DIRS}
 
