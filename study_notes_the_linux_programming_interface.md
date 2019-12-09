@@ -172,6 +172,8 @@
             - [第八题](#第八题)
 - [<2019-12-07 周六>](#2019-12-07-周六)
     - [《The Linux Programming Interface》读书笔记（三十九）](#the-linux-programming-interface读书笔记三十九)
+- [<2019-12-09 周一>](#2019-12-09-周一)
+    - [《The Linux Programming Interface》读书笔记（四十）](#the-linux-programming-interface读书笔记四十)
 
 <!-- markdown-toc end -->
 
@@ -4293,3 +4295,9 @@ timeout after select(): 8.855
 ## 《The Linux Programming Interface》读书笔记（三十九）
 
 今天算是把这本书大部分都看完了，看完最后一章终于知道啥叫`pseudoterminal master`和`pseudoterminal slave`了，它的练习不想做了，感觉挺难，可能也很少用到。
+
+# <2019-12-09 周一>
+
+## 《The Linux Programming Interface》读书笔记（四十）
+
+我移除了本仓库中的电子书，害怕会因为版权问题而陷入麻烦，毕竟是别人写的书，不方便公开。而且网上可以免费下载到此书。我将电子书放在了我的`private`仓库中，此链接仅供自己点击：“[study_notes_books](https://github.com/ysouyno/study_notes_books)”。
