@@ -54,6 +54,7 @@ dkms.conf
 # TLPI
 .clang_complete
 ename.c.inc
+.ccls-cache/
 
 # Ignore tags created by etags, ctags, gtags (GNU global) and cscope
 TAGS
