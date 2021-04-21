@@ -15,7 +15,7 @@
         - [如何用`grep`在文件中查找字符串](#如何用grep在文件中查找字符串)
 - [<2019-06-03 周一>](#2019-06-03-周一)
     - [《The Linux Programming Interface》读书笔记（四）](#the-linux-programming-interface读书笔记四)
-        - [关于`O_EXCL`的用途](#关于oexcl的用途)
+        - [关于`O_EXCL`的用途](#关于o_excl的用途)
 - [<2019-06-20 周四>](#2019-06-20-周四)
     - [《The Linux Programming Interface》读书笔记（五）](#the-linux-programming-interface读书笔记五)
         - [关于`putenv`和`setenv`的使用](#关于putenv和setenv的使用)
@@ -40,12 +40,12 @@
 - [<2019-09-03 周二>](#2019-09-03-周二)
     - [《The Linux Programming Interface》读书笔记（十一）](#the-linux-programming-interface读书笔记十一)
         - [`exit()`函数的使用（一）](#exit函数的使用一)
-        - [Interactions Between `fork()`, `stdio` Buffers, and `_exit()`](#interactions-between-fork-stdio-buffers-and-exit)
+        - [Interactions Between `fork()`, `stdio` Buffers, and `_exit()`](#interactions-between-fork-stdio-buffers-and-_exit)
 - [<2019-09-05 周四>](#2019-09-05-周四)
     - [《The Linux Programming Interface》读书笔记（十二）](#the-linux-programming-interface读书笔记十二)
-        - [将`sig_receiver.c`代码中的`signal()`替换成`sigaction()`](#将sigreceiverc代码中的signal替换成sigaction)
-        - [当`pending`的`signal`处理函数变成`SIG_IGN`，程序永远看不到该信号](#当pending的signal处理函数变成sigign程序永远看不到该信号)
-        - [验证使用`sigaction()`建立信号处理程序时`SA_RESETHAND`和`SA_NODEFER`标志的效果](#验证使用sigaction建立信号处理程序时saresethand和sanodefer标志的效果)
+        - [将`sig_receiver.c`代码中的`signal()`替换成`sigaction()`](#将sig_receiverc代码中的signal替换成sigaction)
+        - [当`pending`的`signal`处理函数变成`SIG_IGN`，程序永远看不到该信号](#当pending的signal处理函数变成sig_ign程序永远看不到该信号)
+        - [验证使用`sigaction()`建立信号处理程序时`SA_RESETHAND`和`SA_NODEFER`标志的效果](#验证使用sigaction建立信号处理程序时sa_resethand和sa_nodefer标志的效果)
 - [<2019-09-06 周五>](#2019-09-06-周五)
     - [《The Linux Programming Interface》读书笔记（十三）](#the-linux-programming-interface读书笔记十三)
 - [<2019-09-07 周六>](#2019-09-07-周六)
@@ -80,13 +80,13 @@
 - [<2019-10-12 周六>](#2019-10-12-周六)
     - [《The Linux Programming Interface》读书笔记（二十）](#the-linux-programming-interface读书笔记二十)
         - [关于第二十六章的练习（二）](#关于第二十六章的练习二)
-            - [第三题，将`procexec/child_status.c`中的`waitpid()`替换为`waitid()`](#第三题将procexecchildstatusc中的waitpid替换为waitid)
+            - [第三题，将`procexec/child_status.c`中的`waitpid()`替换为`waitid()`](#第三题将procexecchild_statusc中的waitpid替换为waitid)
         - [对`wait`，`waitpid()`和`waitid()`的理解](#对waitwaitpid和waitid的理解)
 - [<2019-10-15 周二>](#2019-10-15-周二)
     - [《The Linux Programming Interface》读书笔记（二十一）](#the-linux-programming-interface读书笔记二十一)
-        - [为什么`on_exit()`注册的退出函数在`fork()`子进程中没有被调用](#为什么onexit注册的退出函数在fork子进程中没有被调用)
+        - [为什么`on_exit()`注册的退出函数在`fork()`子进程中没有被调用](#为什么on_exit注册的退出函数在fork子进程中没有被调用)
         - [关于第二十六章的练习（三）](#关于第二十六章的练习三)
-            - [第四题，使用信号同步消除`make_zombie.c`中`system()`前面的`sleep()`的条件竞争](#第四题使用信号同步消除makezombiec中system前面的sleep的条件竞争)
+            - [第四题，使用信号同步消除`make_zombie.c`中`system()`前面的`sleep()`的条件竞争](#第四题使用信号同步消除make_zombiec中system前面的sleep的条件竞争)
 - [<2019-10-18 周五>](#2019-10-18-周五)
     - [《The Linux Programming Interface》读书笔记（二十二）](#the-linux-programming-interface读书笔记二十二)
         - [关于脚本在`linux`下是如何被当做可执行文件执行的](#关于脚本在linux下是如何被当做可执行文件执行的)
@@ -174,6 +174,8 @@
     - [《The Linux Programming Interface》读书笔记（三十九）](#the-linux-programming-interface读书笔记三十九)
 - [<2019-12-09 周一>](#2019-12-09-周一)
     - [《The Linux Programming Interface》读书笔记（四十）](#the-linux-programming-interface读书笔记四十)
+- [<2021-04-21 周三>](#2021-04-21-周三)
+    - [再读《The Linux Programming Interface》读书笔记（一）](#再读the-linux-programming-interface读书笔记一)
 
 <!-- markdown-toc end -->
 
@@ -217,14 +219,14 @@ for dir in lib fileio; do (cd ${dir}; make); \
 % make -p | grep MAKE
 make: *** No targets specified and no makefile found.  Stop.
 MAKE_VERSION := 4.2.1
-MAKEFILE_LIST := 
-GNUMAKEFLAGS := 
+MAKEFILE_LIST :=
+GNUMAKEFLAGS :=
 MAKELEVEL := 0
 MAKE_HOST := x86_64-pc-linux-gnu
 MAKE = $(MAKE_COMMAND)
 MAKE_COMMAND := make
 MAKEFLAGS = p
-MAKEFILES := 
+MAKEFILES :=
 MAKEINFO = makeinfo
 MAKE_TERMERR := /dev/pts/2
 	$(MAKEINFO) $(MAKEINFO_FLAGS) $< -o $@
@@ -875,7 +877,7 @@ exit
 
 % ./check_password
 Username: ysouyno
-Password: 
+Password:
 Successfully authenticated: UID=1000
 ```
 
@@ -3228,7 +3230,7 @@ fake_pclose()
     17 matching files
     pclose() status == 0
 	child exited, status=0
-pattern: 
+pattern:
 ```
 
 #### 第三题
@@ -4301,3 +4303,29 @@ timeout after select(): 8.855
 ## 《The Linux Programming Interface》读书笔记（四十）
 
 我移除了本仓库中的电子书，害怕会因为版权问题而陷入麻烦，毕竟是别人写的书，不方便公开。而且网上可以免费下载到此书。我将电子书放在了我的`private`仓库中，此链接仅供自己点击：“[study_notes_books](https://github.com/ysouyno/study_notes_books)”。
+
+# <2021-04-21 周三>
+
+## 再读《The Linux Programming Interface》读书笔记（一）
+
+发现在最新的`archlinux`上编译代码出错：
+
+``` shellsession
+error: ‘_sys_nerr’ undeclared (first use in this function)
+```
+
+原来是因为`archlinux`上的`glibc-2.33`版本太高，可以查看`man`手册页：
+
+``` shell
+$ man sys_nerr
+```
+
+``` text
+sys_errlist, sys_nerr:
+    From glibc 2.19 to 2.31:
+        _DEFAULT_SOURCE
+    Glibc 2.19 and earlier:
+        _BSD_SOURCE
+```
+
+如何修改代码参考：“[2.2. Deprectation `sys_errlist`, `_sys_errlist`, `sys_nerr`, and `_sys_nerr`](https://sourceware.org/glibc/wiki/Release/2.32#Deprectation_sys_errlist.2C__sys_errlist.2C_sys_nerr.2C_and__sys_nerr)”。

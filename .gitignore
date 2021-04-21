@@ -55,6 +55,8 @@ dkms.conf
 .clang_complete
 ename.c.inc
 .ccls-cache/
+*.html
+*.htm
 
 # Ignore tags created by etags, ctags, gtags (GNU global) and cscope
 TAGS
