@@ -54,6 +54,8 @@ char *strerror(int err)
     }
   }
 
+#ifdef ENABLE_SYS_NERR
+
   if (err < 0 || err >= _sys_nerr || _sys_errlist[err] == NULL) {
     snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
   }
@@ -63,4 +65,12 @@ char *strerror(int err)
   }
 
   return buf;
+
+#else
+
+  // https://sourceware.org/glibc/wiki/Release/2.32#Deprectation_sys_errlist.2C__sys_errlist.2C_sys_nerr.2C_and__sys_nerr
+  const char *r = strerrordesc_np(err);
+  return (char *)(NULL == r ? "Unknown error" : r);
+
+#endif
 }
