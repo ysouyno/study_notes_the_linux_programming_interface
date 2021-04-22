@@ -176,6 +176,10 @@
     - [《The Linux Programming Interface》读书笔记（四十）](#the-linux-programming-interface读书笔记四十)
 - [<2021-04-21 周三>](#2021-04-21-周三)
     - [再读《The Linux Programming Interface》读书笔记（一）](#再读the-linux-programming-interface读书笔记一)
+- [<2021-04-22 周四>](#2021-04-22-周四)
+    - [再读《The Linux Programming Interface》读书笔记（二）](#再读the-linux-programming-interface读书笔记二)
+        - [关于第三章的练习](#关于第三章的练习)
+            - [第一题](#第一题-6)
 
 <!-- markdown-toc end -->
 
@@ -4329,3 +4333,15 @@ sys_errlist, sys_nerr:
 ```
 
 如何修改代码参考：“[2.2. Deprectation `sys_errlist`, `_sys_errlist`, `sys_nerr`, and `_sys_nerr`](https://sourceware.org/glibc/wiki/Release/2.32#Deprectation_sys_errlist.2C__sys_errlist.2C_sys_nerr.2C_and__sys_nerr)”。
+
+# <2021-04-22 周四>
+
+## 再读《The Linux Programming Interface》读书笔记（二）
+
+### 关于第三章的练习
+
+#### 第一题
+
+> When using the Linux-specific `reboot()` system call to reboot the system, the second argument, `magic2`, must be specified as one of a set of magic numbers (e.g., `LINUX_REBOOT_MAGIC2`). What is the significance of these numbers? (Converting them to hexadecimal provides a clue.)
+
+转化成十六进制后明显能看出来这个值是一个日期。
