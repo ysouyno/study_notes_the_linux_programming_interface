@@ -182,6 +182,7 @@
             - [第一题](#第一题-6)
         - [5.1 Atomicity and Race Conditions](#51-atomicity-and-race-conditions)
             - [`O_APPEND`的原子性](#o_append的原子性)
+        - [5.3 Open File Status Flags](#53-open-file-status-flags)
 
 <!-- markdown-toc end -->
 
@@ -4359,3 +4360,15 @@ sys_errlist, sys_nerr:
 目前只看到这里有明确说明`O_APPEND`具有原子性，`open(2)`的手册页上没有明确说明，但是可以推敲出来。
 
 > `O_APPEND` If set, the file offset shall be set to the end of the file prior to each write.
+
+### 5.3 Open File Status Flags
+
+这里提到：
+
+> We can use the `fcntl()` `F_SETFL` command to modify some of the open file status flags. The flags that can be modified are `O_APPEND` , `O_NONBLOCK` , `O_NOATIME` , `O_ASYNC` , and `O_DIRECT` . Attempts to modify other flags are ignored. (Some other UNIX imple-mentations allow `fcntl()` to modify other flags, such as `O_SYNC` .)
+
+似乎与书中在“4.3.1 The open() flags Argument”提到的“Table 4-3”中的`O_DIRECT`矛盾。它位于表格的第二部分，即`File creation flags`，这些标志不能被恢复或者修改。
+
+> File creation flags: These are the flags shown in the second part of Table 4-3. They control various aspects of the behavior of the `open()` call, as well as options for subsequent I/O operations. These flags can’t be retrieved or changed.
+
+这是怎么回事儿呢？
