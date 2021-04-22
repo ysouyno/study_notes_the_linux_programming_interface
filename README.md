@@ -180,6 +180,8 @@
     - [再读《The Linux Programming Interface》读书笔记（二）](#再读the-linux-programming-interface读书笔记二)
         - [关于第三章的练习](#关于第三章的练习)
             - [第一题](#第一题-6)
+        - [5.1 Atomicity and Race Conditions](#51-atomicity-and-race-conditions)
+            - [`O_APPEND`的原子性](#o_append的原子性)
 
 <!-- markdown-toc end -->
 
@@ -4345,3 +4347,15 @@ sys_errlist, sys_nerr:
 > When using the Linux-specific `reboot()` system call to reboot the system, the second argument, `magic2`, must be specified as one of a set of magic numbers (e.g., `LINUX_REBOOT_MAGIC2`). What is the significance of these numbers? (Converting them to hexadecimal provides a clue.)
 
 转化成十六进制后明显能看出来这个值是一个日期。
+
+### 5.1 Atomicity and Race Conditions
+
+#### `O_APPEND`的原子性
+
+多进程向同一个文件中添加内容，避免相互覆盖的方法是使用`O_APPEND`：
+
+> Avoiding this problem requires that the seek to the next byte past the end of the file and the write operation happen atomically. This is what opening a file with the `O_APPEND` flag guarantees.
+
+目前只看到这里有明确说明`O_APPEND`具有原子性，`open(2)`的手册页上没有明确说明，但是可以推敲出来。
+
+> `O_APPEND` If set, the file offset shall be set to the end of the file prior to each write.
