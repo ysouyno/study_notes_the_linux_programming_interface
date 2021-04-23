@@ -183,6 +183,11 @@
         - [5.1 Atomicity and Race Conditions](#51-atomicity-and-race-conditions)
             - [`O_APPEND`的原子性](#o_append的原子性)
         - [5.3 Open File Status Flags](#53-open-file-status-flags)
+- [<2021-04-23 周五>](#2021-04-23-周五)
+    - [再读《The Linux Programming Interface》读书笔记（三）](#再读the-linux-programming-interface读书笔记三)
+        - [5.6 File `I/O` at a Specified Offset: `pread()` and `pwrite()`](#56-file-io-at-a-specified-offset-pread-and-pwrite)
+        - [5.7 Scatter-Gather `I/O`: `readv()` and `writev()`](#57-scatter-gather-io-readv-and-writev)
+        - [5.10 `I/O` on Large Files](#510-io-on-large-files)
 
 <!-- markdown-toc end -->
 
@@ -4372,3 +4377,47 @@ sys_errlist, sys_nerr:
 > File creation flags: These are the flags shown in the second part of Table 4-3. They control various aspects of the behavior of the `open()` call, as well as options for subsequent I/O operations. These flags can’t be retrieved or changed.
 
 这是怎么回事儿呢？
+
+# <2021-04-23 周五>
+
+## 再读《The Linux Programming Interface》读书笔记（三）
+
+### 5.6 File `I/O` at a Specified Offset: `pread()` and `pwrite()`
+
+``` c++
+#include <unistd.h>
+
+// Returns number of bytes read, 0 on EOF, or -1 on error
+ssize_t pread(int fd , void * buf , size_t count , off_t offset );
+
+// Returns number of bytes written, or -1 on error
+ssize_t pwrite(int fd , const void * buf , size_t count , off_t offset );
+```
+
+为什么会有`pread()`和`pwrite()`这两个系统调用？因为这两个系统调用不需要修改`file offset`，因为文件偏移是系统全局的，在多线程程序中，修改`file offset`可能会产生条件竞争，参考图：
+
+![](files/tlpi_figure_5_2.png)
+
+且`pread()`和`pwrite()`仅为一次系统调用，相对于`lseek()`和`read()`或者`write()`的两次系统调用少了一次。虽然系统调用的时间消耗相比`I/O`操作而言可以忽略不计，但是毕竟性能又可以提高一点点儿了。
+
+### 5.7 Scatter-Gather `I/O`: `readv()` and `writev()`
+
+``` c++
+#include <sys/uio.h>
+
+// Returns number of bytes read, 0 on EOF, or -1 on error
+ssize_t readv(int fd , const struct iovec * iov , int iovcnt );
+
+// Returns number of bytes written, or -1 on error
+ssize_t writev(int fd , const struct iovec * iov , int iovcnt );
+```
+
+这两个函数其实就是可以根据结构体数组参数`iov`里的每个成员提供的`iov_base`和`iov_len`一次读取或者写入多块内存，而`preadv()`、`pwritev()`与`readv()`、`writev()`的关系和`pread()`、`pwrite()`与`read()`、`write()`的关系是一样的。
+
+### 5.10 `I/O` on Large Files
+
+为什么提倡使用`off_t`？因为对于大文件的操作来说，可以在编译的时候提供宏`_FILE_OFFSET_BITS`来让比如`open()`系统调用自动转化为对`open64()`的调用，而不需要修改源代码，如果你使用`C`语言原生的整数类型代替`off_t`就没有这个福利了。
+
+``` shellsession
+$ cc -D_FILE_OFFSET_BITS=64 prog.c
+```
