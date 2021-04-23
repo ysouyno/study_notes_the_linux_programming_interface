@@ -4421,3 +4421,33 @@ ssize_t writev(int fd , const struct iovec * iov , int iovcnt );
 ``` shellsession
 $ cc -D_FILE_OFFSET_BITS=64 prog.c
 ```
+
+### 关于第五章的练习
+
+#### 第二题
+
+正像在“[`O_APPEND`的原子性](#o_append的原子性)”中提到的那样，我猜到了结果和原因，因为`O_APPEND`的效果是每次`write()`系统调用之前都会将文件偏移设置到文件的末尾。因此即使在调用`write()`之前使用`lseek()`将文件偏移设置到文件开头，`write()`调用之后，写入的内容仍然被添加到了文件的结尾。
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch exercises]$ ./05_01 x 100
+[ysouyno@arch exercises]$ hexdump -C x
+00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00000060  00 00 00 00 74 65 73 74                           |....test|
+00000068
+[ysouyno@arch exercises]$ truncate x -s 100
+[ysouyno@arch exercises]$ hexdump -C x
+00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00000060  00 00 00 00                                       |....|
+00000064
+[ysouyno@arch exercises]$ ./05_02 x
+[ysouyno@arch exercises]$ hexdump -C x
+00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00000060  00 00 00 00 74 65 73 74                           |....test|
+00000068
+[ysouyno@arch exercises]$
+```
