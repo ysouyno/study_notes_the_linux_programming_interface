@@ -188,6 +188,9 @@
         - [5.6 File `I/O` at a Specified Offset: `pread()` and `pwrite()`](#56-file-io-at-a-specified-offset-pread-and-pwrite)
         - [5.7 Scatter-Gather `I/O`: `readv()` and `writev()`](#57-scatter-gather-io-readv-and-writev)
         - [5.10 `I/O` on Large Files](#510-io-on-large-files)
+        - [关于第五章的练习](#关于第五章的练习)
+            - [第二题](#第二题-6)
+            - [第三题](#第三题-5)
 
 <!-- markdown-toc end -->
 
@@ -4449,5 +4452,22 @@ $ cc -D_FILE_OFFSET_BITS=64 prog.c
 *
 00000060  00 00 00 00 74 65 73 74                           |....test|
 00000068
+[ysouyno@arch exercises]$
+```
+
+#### 第三题
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch exercises]$ ./05_03 a1 1000000 & ./05_03 a1 1000000
+[1] 22483
+[ysouyno@arch exercises]$ ./05_03 a2 1000000 x & ./05_03 a2 1000000 x
+[2] 22485
+[1]   Done                    ./05_03 a1 1000000
+[2]+  Done                    ./05_03 a2 1000000 x
+[ysouyno@arch exercises]$ ls -l a1 a2
+-rw------- 1 ysouyno ysouyno 2000000 Apr 23 16:50 a1
+-rw------- 1 ysouyno ysouyno 1999550 Apr 23 16:50 a2
 [ysouyno@arch exercises]$
 ```
