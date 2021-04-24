@@ -191,6 +191,10 @@
         - [关于第五章的练习](#关于第五章的练习)
             - [第二题](#第二题-6)
             - [第三题](#第三题-5)
+- [<2021-04-24 Sat>](#2021-04-24-sat)
+    - [再读《The Linux Programming Interface》读书笔记（四）](#再读the-linux-programming-interface读书笔记四)
+        - [关于第五章的练习](#关于第五章的练习-1)
+            - [第四题](#第四题-2)
 
 <!-- markdown-toc end -->
 
@@ -4471,3 +4475,39 @@ $ cc -D_FILE_OFFSET_BITS=64 prog.c
 -rw------- 1 ysouyno ysouyno 1999550 Apr 23 16:50 a2
 [ysouyno@arch exercises]$
 ```
+
+# <2021-04-24 Sat>
+
+## 再读《The Linux Programming Interface》读书笔记（四）
+
+### 关于第五章的练习
+
+#### 第四题
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch exercises]$ ./05_04
+fake_dup(0): 3
+fake_dup2(0, 0): 0
+fake_dup2(0, 1): 1
+fake_dup2(23, 24): Bad file descriptor
+ERROR [EBADF Bad file descriptor] fake_dup2(23, 23)
+[ysouyno@arch exercises]$ ./05_04
+fake_dup(0): 3
+fake_dup2(0, 0): 0
+fake_dup2(0, 1): 1
+fake_dup2(23, 24): Bad file descriptor
+ERROR [EBADF Bad file descriptor] fake_dup2(23, 23)
+[ysouyno@arch exercises]$
+```
+
+结果在意料之中：
+
+`fake_dup(0)`返回`3`，是因为除了标准输入、输出和标准错误，最小的一个未被使用的文件描述符是`3`。
+
+`fake_dup2(0, 0)`返回`0`，是因为`fake_dup2(0, 0)`的新老文件描述符相同，内部判断如果老文件描述符是有效的，则不做任何操作，将老文件描述返回出去当作新文件描述符，所以返回`0`。
+
+`fake_dup2(0, 1)`返回`1`，是因为在`fake_dup2(0, 1)`内部首先将`1`关闭，返回最小的未被使用的文件描述符就是这个刚刚被关闭的`1`。
+
+此外如何判断一个文件描述符是否有效？我还想了一会儿，原来答案就是题目的描述中，即使用`fcntl(fd, F_GETFL)`来判断。
