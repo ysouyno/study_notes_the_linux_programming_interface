@@ -195,6 +195,8 @@
     - [再读《The Linux Programming Interface》读书笔记（四）](#再读the-linux-programming-interface读书笔记四)
         - [关于第五章的练习](#关于第五章的练习-1)
             - [第四题](#第四题-2)
+            - [第五题](#第五题-2)
+            - [第六题](#第六题-1)
 
 <!-- markdown-toc end -->
 
@@ -4511,3 +4513,19 @@ ERROR [EBADF Bad file descriptor] fake_dup2(23, 23)
 `fake_dup2(0, 1)`返回`1`，是因为在`fake_dup2(0, 1)`内部首先将`1`关闭，返回最小的未被使用的文件描述符就是这个刚刚被关闭的`1`。
 
 此外如何判断一个文件描述符是否有效？我还想了一会儿，原来答案就是题目的描述中，即使用`fcntl(fd, F_GETFL)`来判断。
+
+#### 第五题
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch exercises]$ ./05_05 x
+current oldfd offset: 0
+current newfd offset: 0
+current oldfd offset: 32
+current newfd offset: 32
+```
+
+#### 第六题
+
+注意通过`dup()`生成的两个文件描述符共用的是一个文件偏移，而通过`open()`打开的同一个文件则有一份单独的文件偏移。即“[5.6 File `I/O` at a Specified Offset: `pread()` and `pwrite()`](#56-file-io-at-a-specified-offset-pread-and-pwrite)”配图的中间部分`Open file table`表，`open()`新创建了一个条目，拥有单独的文件偏移。
