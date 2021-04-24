@@ -197,6 +197,7 @@
             - [第四题](#第四题-2)
             - [第五题](#第五题-2)
             - [第六题](#第六题-1)
+        - [6.3 Memory Layout of a Process](#63-memory-layout-of-a-process)
 
 <!-- markdown-toc end -->
 
@@ -4529,3 +4530,41 @@ current newfd offset: 32
 #### 第六题
 
 注意通过`dup()`生成的两个文件描述符共用的是一个文件偏移，而通过`open()`打开的同一个文件则有一份单独的文件偏移。即“[5.6 File `I/O` at a Specified Offset: `pread()` and `pwrite()`](#56-file-io-at-a-specified-offset-pread-and-pwrite)”配图的中间部分`Open file table`表，`open()`新创建了一个条目，拥有单独的文件偏移。
+
+### 6.3 Memory Layout of a Process
+
+需要有一个总体的概念，附书中图：
+
+![](files/tlpi_figure_6_1.png)
+
+关于全局变量其中分为两个段，一个是`initialized data segment`（这应该是`data`段），另一个是`uninitialized data segment`（同时这也是经常看到的`bss`段）。
+
+另外一个知识点是`etext`，`edata`和`end`三个变量及`size`命令，测试代码如下：
+
+``` c++
+#include <stdio.h>
+
+// For example, &etext gives the address of the end of the program text / start
+// of initialized data
+extern char etext, edata, end;
+
+int main(int argc, char *argv[]) {
+  printf("&etext: %p\n", &etext);
+  printf("&edata: %p\n", &edata);
+  printf("&end  : %p\n", &end);
+  return 0;
+}
+```
+
+相关输出：
+
+``` shellsession
+[ysouyno@arch test]$ size t_etext_edata_end
+   text	   data	    bss	    dec	    hex	filename
+   1599	    584	      8	   2191	    88f	t_etext_edata_end
+[ysouyno@arch test]$ ./t_etext_edata_end
+&etext: 0x55f2baa04225
+&edata: 0x55f2baa07030
+&end  : 0x55f2baa07038
+[ysouyno@arch test]$
+```
