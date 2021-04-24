@@ -4459,7 +4459,6 @@ $ cc -D_FILE_OFFSET_BITS=64 prog.c
 *
 00000060  00 00 00 00 74 65 73 74                           |....test|
 00000068
-[ysouyno@arch exercises]$
 ```
 
 #### 第三题
@@ -4476,7 +4475,6 @@ $ cc -D_FILE_OFFSET_BITS=64 prog.c
 [ysouyno@arch exercises]$ ls -l a1 a2
 -rw------- 1 ysouyno ysouyno 2000000 Apr 23 16:50 a1
 -rw------- 1 ysouyno ysouyno 1999550 Apr 23 16:50 a2
-[ysouyno@arch exercises]$
 ```
 
 # <2021-04-24 Sat>
@@ -4502,7 +4500,6 @@ fake_dup2(0, 0): 0
 fake_dup2(0, 1): 1
 fake_dup2(23, 24): Bad file descriptor
 ERROR [EBADF Bad file descriptor] fake_dup2(23, 23)
-[ysouyno@arch exercises]$
 ```
 
 结果在意料之中：
@@ -4566,5 +4563,6 @@ int main(int argc, char *argv[]) {
 &etext: 0x55f2baa04225
 &edata: 0x55f2baa07030
 &end  : 0x55f2baa07038
-[ysouyno@arch test]$
 ```
+
+从上面`size`的输出来看`bss`的大小`8`与`&end - &edata`的值是相等的，可是为什么`data`的值为`584`而`&edata - &etext`的值即是`2e0b`呢？他们不也应该相等吗？
