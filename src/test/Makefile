@@ -1,7 +1,8 @@
 include ../Makefile.inc
 
 GEN_EXE = fileio_test_00 fileio_test_01 signals_test_00 signals_test_01 \
-	signals_test_02 signals_test_03 execl_test_00 t_etext_edata_end
+	signals_test_02 signals_test_03 execl_test_00 t_etext_edata_end \
+	t_gnu_argc_argv
 
 EXE = ${GEN_EXE}
 
