@@ -4565,4 +4565,4 @@ int main(int argc, char *argv[]) {
 &end  : 0x55f2baa07038
 ```
 
-从上面`size`的输出来看`bss`的大小`8`与`&end - &edata`的值是相等的，可是为什么`data`的值为`584`而`&edata - &etext`的值即是`2e0b`呢？他们不也应该相等吗？
+从上面`size`的输出来看`bss`的大小`8`与`&end - &edata`的值是相等的，可是为什么`data`的值为`584`而`&edata - &etext`的值即是`2e0b`呢？他们不也应该相等吗？难道是因为程序被加载后段被重定位和页面对齐的原因引起的？
