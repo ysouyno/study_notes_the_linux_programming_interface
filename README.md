@@ -198,6 +198,10 @@
             - [第五题](#第五题-2)
             - [第六题](#第六题-1)
         - [6.3 Memory Layout of a Process](#63-memory-layout-of-a-process)
+- [<2021-04-25 Sun>](#2021-04-25-sun)
+    - [再读《The Linux Programming Interface》读书笔记（五）](#再读the-linux-programming-interface读书笔记五)
+        - [6.7 Environment List](#67-environment-list)
+        - [6.8 Performing a Nonlocal Goto: `setjmp()` and `longjmp()`](#68-performing-a-nonlocal-goto-setjmp-and-longjmp)
 
 <!-- markdown-toc end -->
 
@@ -4566,3 +4570,32 @@ int main(int argc, char *argv[]) {
 ```
 
 从上面`size`的输出来看`bss`的大小`8`与`&end - &edata`的值是相等的，可是为什么`data`的值为`584`而`&edata - &etext`的值即是`2e0b`呢？他们不也应该相等吗？难道是因为程序被加载后段被重定位和页面对齐的原因引起的？
+
+# <2021-04-25 Sun>
+
+## 再读《The Linux Programming Interface》读书笔记（五）
+
+### 6.7 Environment List
+
+`putenv()`和`setenv()`的一个明显的区别在于：`putenv()`的参数将成为环境变量的一部分，而不是复制参数的字符串，这样对参数的字符串的任何修改就影响了环境变量；`setenv()`是将参数的内容拷贝到环境变量中。
+
+### 6.8 Performing a Nonlocal Goto: `setjmp()` and `longjmp()`
+
+可以看看之前的读书笔记：“[关于`setjmp`和`longjmp`的使用](#关于setjmp和longjmp的使用)”和“[关于`setjmp`和`longjmp`的编译器优化问题](#关于setjmp和longjmp的编译器优化问题)”。这里搬一些书中讲的涉及底层的内容，方便理解。
+
+``` c++
+#include <setjmp.h>
+
+// Returns 0 on initial call, nonzero on return via longjmp()
+int setjmp(jmp_buf env);
+
+void longjmp(jmp_buf env, int val);
+```
+
+`longjmp()`的第二个参数如果设置为`0`，也会当成`1`来使用，因为`0`是`setjmp()`的初始返回值，之所以称之为初始返回值，即当`longjmp()`跳过来时`setjmp()`就相当于是一次虚假返回，返回值是`longjmp()`的第二个参数。
+
+`jmp_buf env`参数中存放了`pc`寄存器的值（据说`program counter`即`pc`，是非`intel`厂商对`ip`寄存器的称呼）和`sp`寄存器的值，因为有了这两个寄存器的值在调用链中的`setjmp()`和`longjmp()`之间的函数栈桢`frame`会被去掉，最后重置`pc`寄存器的值。
+
+从上段的描述中可以得到这样一个事实，即`setjmp()`和`longjmp()`都是处于被调用的情况下，在此调用链中可以通过`longjmp()`来跳到`setjmp()`处继续执行。如果`setjmp()`没有被调用，即栈上没有`setjmp()`的桢`frame`，就无从谈起`longjmp()`的跳转了。
+
+书中强烈不推荐使用`setjmp()`和`longjmp()`，这可能是真的，因为我也没见过有多少开源代码使用过它们，除了前段时间看`emacs`的源代码，发现里面使用了`setjmp()`和`sigsetjmp()`，比如在`bytecode.c`中有`sys_setjmp()`。
