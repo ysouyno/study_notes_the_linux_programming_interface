@@ -4647,3 +4647,44 @@ getgid() : 1000
 geteuid(): 0
 getegid(): 0
 ```
+
+### 关于第九章的练习
+
+#### 第四题
+
+原来`setuid()`和`seteuid()`不能永久的去掉`set-user-ID`身份，`setreuid()`和`setresuid()`可以，即`real user ID`和`effective user ID`一同被修改。
+
+附上书中的答案：
+
+``` c++
+e = geteuid(); /* Save initial value of effective user ID */
+
+setuid(getuid()); /* Suspend privileges */
+setuid(e);        /* Resume privileges */
+/* Can't permanently drop the set-user-ID identity with setuid() */
+
+seteuid(getuid()); /* Suspend privileges */
+seteuid(e);        /* Resume privileges */
+/* Can't permanently drop the set-user-ID identity with seteuid() */
+
+setreuid(-1, getuid());       /* Temporarily drop privileges */
+setreuid(-1, e);              /* Resume privileges */
+setreuid(getuid(), getuid()); /* Permanently drop privileges */
+
+setresuid(-1, getuid(), -1);             /* Temporarily drop privileges */
+setresuid(-1, e, -1);                    /* Resume privileges */
+setresuid(getuid(), getuid(), getuid()); /* Permanently drop privileges */
+```
+
+讲真，第九章我看得是云里雾里，如果硬要说学到了啥？我觉得只是了解了什么是`set-user-ID`。
+
+#### 第五题
+
+似乎第四题的小总结还是不对，可能只是针对于`set-user-ID`，而不包括`set-user-ID-root`，因为第五题的答案是：
+
+``` c++
+/* (a) Can't suspend and resume privileges with setuid() */
+setuid(getuid()); /* (b) Permanently drop privileges */
+```
+
+不行不行，这第九章还得重新再看一遍。
