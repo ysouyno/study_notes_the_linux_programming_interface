@@ -4599,3 +4599,51 @@ void longjmp(jmp_buf env, int val);
 从上段的描述中可以得到这样一个事实，即`setjmp()`和`longjmp()`都是处于被调用的情况下，在此调用链中可以通过`longjmp()`来跳到`setjmp()`处继续执行。如果`setjmp()`没有被调用，即栈上没有`setjmp()`的桢`frame`，就无从谈起`longjmp()`的跳转了。
 
 书中强烈不推荐使用`setjmp()`和`longjmp()`，这可能是真的，因为我也没见过有多少开源代码使用过它们，除了前段时间看`emacs`的源代码，发现里面使用了`setjmp()`和`sigsetjmp()`，比如在`bytecode.c`中有`sys_setjmp()`。
+
+# <2021-04-26 Mon>
+
+## 再读《The Linux Programming Interface》读书笔记（六）
+
+### 9.7 Retrieving and Modifying Process Credentials
+
+#### 9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs
+
+尝试了`getuid()`，`getgid()`，`geteuid()`和`getegid()`的使用，好奇同样的程序如果设置了`Set-User-ID`和`Set-Group-ID`后会是什么样的效果？
+
+``` c++
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+  printf("getuid() : %d\n", getuid());
+  printf("getgid() : %d\n", getgid());
+  printf("geteuid(): %d\n", geteuid());
+  printf("getegid(): %d\n", getegid());
+  return 0;
+}
+```
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch test]$ ls -l t_getid
+-rwxr-xr-x 1 ysouyno ysouyno 17304 Apr 26 13:48 t_getid
+[ysouyno@arch test]$ ./t_getid
+getuid() : 1000
+getgid() : 1000
+geteuid(): 1000
+getegid(): 1000
+[ysouyno@arch test]$ sudo chown root t_getid
+[ysouyno@arch test]$ sudo chgrp root t_getid
+[ysouyno@arch test]$ ls -l t_getid
+-rwxr-xr-x 1 root root 17304 Apr 26 13:48 t_getid
+[ysouyno@arch test]$ sudo chmod u+s t_getid
+[ysouyno@arch test]$ sudo chmod g+s t_getid
+[ysouyno@arch test]$ ls -l t_getid
+-rwsr-sr-x 1 root root 17304 Apr 26 13:48 t_getid
+[ysouyno@arch test]$ ./t_getid
+getuid() : 1000
+getgid() : 1000
+geteuid(): 0
+getegid(): 0
+```
