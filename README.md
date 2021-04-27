@@ -202,6 +202,17 @@
     - [再读《The Linux Programming Interface》读书笔记（五）](#再读the-linux-programming-interface读书笔记五)
         - [6.7 Environment List](#67-environment-list)
         - [6.8 Performing a Nonlocal Goto: `setjmp()` and `longjmp()`](#68-performing-a-nonlocal-goto-setjmp-and-longjmp)
+- [<2021-04-26 Mon>](#2021-04-26-mon)
+    - [再读《The Linux Programming Interface》读书笔记（六）](#再读the-linux-programming-interface读书笔记六)
+        - [9.7 Retrieving and Modifying Process Credentials](#97-retrieving-and-modifying-process-credentials)
+            - [9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（一）](#971-retrieving-and-modifying-real-effective-and-saved-set-ids一)
+        - [关于第九章的练习](#关于第九章的练习)
+            - [第四题](#第四题-3)
+            - [第五题](#第五题-3)
+- [<2021-04-27 Tue>](#2021-04-27-tue)
+    - [再读《The Linux Programming Interface》读书笔记（七）](#再读the-linux-programming-interface读书笔记七)
+        - [9.7 Retrieving and Modifying Process Credentials](#97-retrieving-and-modifying-process-credentials-1)
+            - [9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（二）](#971-retrieving-and-modifying-real-effective-and-saved-set-ids二)
 
 <!-- markdown-toc end -->
 
@@ -4606,7 +4617,7 @@ void longjmp(jmp_buf env, int val);
 
 ### 9.7 Retrieving and Modifying Process Credentials
 
-#### 9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs
+#### 9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（一）
 
 尝试了`getuid()`，`getgid()`，`geteuid()`和`getegid()`的使用，好奇同样的程序如果设置了`Set-User-ID`和`Set-Group-ID`后会是什么样的效果？
 
@@ -4688,3 +4699,137 @@ setuid(getuid()); /* (b) Permanently drop privileges */
 ```
 
 不行不行，这第九章还得重新再看一遍。
+
+# <2021-04-27 Tue>
+
+## 再读《The Linux Programming Interface》读书笔记（七）
+
+### 9.7 Retrieving and Modifying Process Credentials
+
+#### 9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（二）
+
+`setuid()`的两个规则：
+
+1）如果在没有权限的进程中使用，即普通进程，`setuid()`仅会改变`effective user ID`的值，且只能用`real user ID`或`saved set-user-ID`的值做为参数（不然的话报`EPERM`错误），又因为普通进程中`real user ID`，`effective user ID`和`saved set-user-ID`是相等的，所以在普通进程中使用`setuid()`就显得没有必要了，所以`setuid()`会使用在当执行一个`set-user-ID`程序中，且注意区别`set-user-ID`和`set-user-ID-root`。
+
+2）如果在有权限的进程中使用，则会同时改变`real user ID`，`effective user ID`和`saved set-user-ID`，注意这里设置后不能撤消，意思是因为有权限的进程就是指的是`UID`为`0`的`root`权限的进程，当设置`setuid()`后，没有权限再将其设置回`0`。
+
+我的测试代码：
+
+``` c++
+#include "tlpi_hdr.h"
+#include <stdio.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[]) {
+  int id;
+  if (argc > 1)
+    id = atoll(argv[1]);
+  else
+    id = getuid();
+
+  // For unprivileged process, only the effective user ID is changed, and it can
+  // be changed only to the same value as either the read user ID or saved
+  // set-user-ID.
+  if (-1 == setuid(id)) {
+    errExit("setuid");
+  } else {
+    printf("setuid(getuid()) ok\n");
+  }
+
+  printf("getuid() : %d\n", getuid());
+  printf("geteuid(): %d\n", geteuid());
+
+  return 0;
+}
+```
+
+测试输出如下：
+
+``` shellsession
+[ysouyno@arch test]$ ./t_setuid
+setuid(getuid()) ok
+getuid() : 1000
+geteuid(): 1000
+[ysouyno@arch test]$ ./t_setuid 23
+ERROR [EPERM Operation not permitted] setuid
+[ysouyno@arch test]$ sudo ./t_setuid
+setuid(getuid()) ok
+getuid() : 0
+geteuid(): 0
+[ysouyno@arch test]$ sudo ./t_setuid 23
+setuid(getuid()) ok
+getuid() : 23
+geteuid(): 23
+```
+
+结合“[9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（一）](#971-retrieving-and-modifying-real-effective-and-saved-set-ids一)”中的输出，注意区分将`t_getid`通过`chown`和`chmod`命令修改成一个`set-user-ID-root`程序和直接使用`sudo ./t_getid`的输出的区别，如下：
+
+``` shellsession
+[ysouyno@arch test]$ ls -l t_getid
+-rwxr-xr-x 1 ysouyno ysouyno 17304 Apr 27 09:05 t_getid
+[ysouyno@arch test]$ ./t_getid
+getuid() : 1000
+getgid() : 1000
+geteuid(): 1000
+getegid(): 1000
+[ysouyno@arch test]$ sudo ./t_getid
+getuid() : 0
+getgid() : 0
+geteuid(): 0
+getegid(): 0
+```
+
+即如果`t_getid`是一个`set-user-ID-root`程序，`getuid()`返回的是`1000`（直接执行，不需要`sudo`命令），如果`sudo ./t_getid`（t_getid是普通程序）以管理员权限执行，则`getuid()`返回的是`0`。
+
+**注：一个进程是否具有高权限取决于`effective user ID`。**
+
+有了上面的`t_getid`输出对比，现在原文的这句话就能理解了：
+
+> The following call is the preferred method for a set-user-ID-root program whose effective user ID is currently 0 to irrevocably drop all privileges (by setting both the effective user ID and saved set-user-ID to the same value as the real user ID):
+
+``` c++
+if (setuid(getuid()) == -1)
+  errExit("setuid");
+```
+
+即`set-user-ID-root`程序通过`getuid()`获得的是`1000`（举例），所以`setuid()`就将`real user ID`，`effective user ID`和`saved set-user-ID`都设置为`1000`了，因为设置前`set-user-ID-root`的`effective user ID`是`0`，`setuid()`可以同时修改这三个值。
+
+现在`seteuid()`也变得好理解了：
+
+> Using `seteuid()` is the preferred method for set-user-ID and set-group-ID programs to temporarily drop and later regain privileges. Here’s an example:
+
+``` c++
+euid = geteuid(); /* Save initial effective user ID (which is same as saved
+                     set-user-ID) */
+if (seteuid(getuid()) == -1) /* Drop privileges */
+  errExit("seteuid");
+if (seteuid(euid) == -1) /* Regain privileges */
+  errExit("seteuid");
+```
+
+而`setreuid()`规则似乎更加难以记忆：
+
+``` c++
+#include <unistd.h>
+
+// Both return 0 on success, or –1 on error
+int setreuid(uid_t ruid, uid_t euid);
+int setregid(gid_t rgid, gid_t egid);
+```
+
+1）对于没有权限的进程，该函数只能将`real user ID`设置为当前的`real user ID`或`effective user ID`，`effective user ID`可以仅被设置为当前的`real user ID`，`effective user ID`或`saved set-user-ID`。
+
+2）对于有权限的进程，可以设置为任何值。
+
+3）对于所有进程（有权限和无权限进程）（**这里主要是为了讲`saved set-user-ID`的是否会被设置为`effective user ID`值的情况**），即如果第一个参数`ruid`不是`-1`或者`effective user ID`被设置成了一个不同于`real user ID`的值，那么`saved set-user-ID`的值就会被设置为`effective user ID`的值。反过来说，即如果`setreuid()`仅修改`effective user ID`为当前的`real user ID`的话，那么`saved set-user-ID`就不会被修改。
+
+但是我没能理解上行这第三条规则为什么会提供了永久去除`set-user-ID`权限的方法呢？
+
+> The third rule provides a way for a set-user-ID program to permanently drop its privilege, using a call such as the following:
+
+``` c++
+setreuid(getuid(), getuid());
+```
+
+好了，有了上面的知识再看第九章的“[第四题](#第四题-3)”和“[第五题](#第五题-3)”已经可以理解了。
