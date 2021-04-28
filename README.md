@@ -216,6 +216,7 @@
 - [<2021-04-28 Wed>](#2021-04-28-wed)
     - [再读《The Linux Programming Interface》读书笔记（八）](#再读the-linux-programming-interface读书笔记八)
         - [10.1 Calendar Time](#101-calendar-time)
+        - [10.2 Time-Conversion Functions](#102-time-conversion-functions)
 
 <!-- markdown-toc end -->
 
@@ -4864,6 +4865,8 @@ time_t time(time_t *timep);
 
 `time()`函数可能的错误仅是传入的参数`timep`的指针不合法，所以使用`t = time(NULL);`这种写法可以不用判断函数的返回值。
 
+### 10.2 Time-Conversion Functions
+
 下面这两个函数将`time_t`这个整数转化为一个`Broken-Down Time`：
 
 ``` c++
@@ -4877,4 +4880,4 @@ struct tm *localtime(const time_t *timep);
 
 区别在于`gmtime()`的`gm`表示`Greenwich Mean Time`，即格林尼治时间，而`localtime()`根据账号时区及`DST`的设置。
 
-第十章看得困得不行，放弃。
+今天看来不适合看此书，囫囵吞枣，浪费时间。
