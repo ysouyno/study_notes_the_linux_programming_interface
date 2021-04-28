@@ -213,6 +213,9 @@
     - [再读《The Linux Programming Interface》读书笔记（七）](#再读the-linux-programming-interface读书笔记七)
         - [9.7 Retrieving and Modifying Process Credentials](#97-retrieving-and-modifying-process-credentials-1)
             - [9.7.1 Retrieving and Modifying Real, Effective, and Saved Set IDs（二）](#971-retrieving-and-modifying-real-effective-and-saved-set-ids二)
+- [<2021-04-28 Wed>](#2021-04-28-wed)
+    - [再读《The Linux Programming Interface》读书笔记（八）](#再读the-linux-programming-interface读书笔记八)
+        - [10.1 Calendar Time](#101-calendar-time)
 
 <!-- markdown-toc end -->
 
@@ -4833,3 +4836,45 @@ setreuid(getuid(), getuid());
 ```
 
 好了，有了上面的知识再看第九章的“[第四题](#第四题-3)”和“[第五题](#第五题-3)”已经可以理解了。
+
+# <2021-04-28 Wed>
+
+## 再读《The Linux Programming Interface》读书笔记（八）
+
+### 10.1 Calendar Time
+
+最基础是应该是这个`time_t`结构，就像`pid_t`，`uid_t`一样在`linux`平台上应该是一个整数类型，它存储着从`Epoch`到此时的秒数。然后下面这两个函数都可以获得`time_t`，只不过`gettimeofday()`将它存放在了第一个参数类型为`timeval`的结构体中：
+
+``` c++
+#include <sys/time.h>
+
+// Returns 0 on success, or –1 on error
+int gettimeofday(struct timeval *tv, struct timezone *tz);
+
+struct timeval {
+  time_t tv_sec;   /* Seconds since 00:00:00, 1 Jan 1970 UTC */
+  suseconds_t tv_usec; /* Additional microseconds (long int) */
+};
+
+#include <time.h>
+
+// Returns number of seconds since the Epoch,or (time_t) –1 on error
+time_t time(time_t *timep);
+```
+
+`time()`函数可能的错误仅是传入的参数`timep`的指针不合法，所以使用`t = time(NULL);`这种写法可以不用判断函数的返回值。
+
+下面这两个函数将`time_t`这个整数转化为一个`Broken-Down Time`：
+
+``` c++
+#include <time.h>
+
+// Both return a pointer to a statically allocated broken-down
+// time structure on success, or NULL on error
+struct tm *gmtime(const time_t *timep);
+struct tm *localtime(const time_t *timep);
+```
+
+区别在于`gmtime()`的`gm`表示`Greenwich Mean Time`，即格林尼治时间，而`localtime()`根据账号时区及`DST`的设置。
+
+第十章看得困得不行，放弃。
