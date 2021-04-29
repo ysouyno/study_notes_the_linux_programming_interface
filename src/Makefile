@@ -19,7 +19,8 @@ DIRS = lib \
 	pmsg \
 	sockets \
 	altio \
-	pty
+	pty \
+	dirs_links
 
 BUILD_DIRS = ${DIRS}
 
