@@ -11,7 +11,7 @@ GEN_EXE = 04_01_tee 20_01_sig_receiver 20_02 20_03 22_01 22_02 22_03 \
 	57_03_seqnum_server 57_03_seqnum_client \
 	59_01_seqnum_sv 59_01_seqnum_cl \
 	59_02_seqnum_sv 59_02_seqnum_cl 63_01 63_02 63_03 63_05 \
-	04_02_cp 05_01 05_02 05_03 05_04 05_05
+	04_02_cp 05_01 05_02 05_03 05_04 05_05 12_01
 
 EXE = ${GEN_EXE}
 
